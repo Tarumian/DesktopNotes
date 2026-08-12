@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,49 +11,11 @@ namespace DesktopNotes
     public partial class MainWindow : Window
     {
         // =========================================================
-        // ԹԵՐԹԻԿԻ ՏՎՅԱԼՆԵՐ
+        // WINDOW-Ի ԵՐԿՐԱՉԱՓՈՒԹՅՈՒՆ
         // =========================================================
 
-        private class NoteData
-        {
-            public DateTime Created { get; set; }
-
-            public string TextRtf { get; set; } = "";
-
-            public double Width { get; set; }
-            public double Height { get; set; }
-
-            public double Left { get; set; }
-            public double Top { get; set; }
-
-            public double Rotation { get; set; }
-
-            public Brush Background { get; set; }
-                = new SolidColorBrush(
-                    Color.FromRgb(255, 245, 157));
-
-            public string FontFamily { get; set; }
-                = "Arial";
-
-            public double FontSize { get; set; }
-                = 18;
-
-            public FontWeight FontWeight { get; set; }
-                = FontWeights.Normal;
-
-            public FontStyle FontStyle { get; set; }
-                = FontStyles.Normal;
-        }
-
-
-        // =========================================================
-        // ԹԵՐԹԻԿՆԵՐԻ ՑԱՆԿ
-        // =========================================================
-
-        private readonly List<NoteData> notes =
-            new List<NoteData>();
-
-        private int currentNoteIndex = 0;
+        private const double WindowPadding = 10;
+        private const double WindowStep = 20;
 
 
         // =========================================================
@@ -70,18 +31,6 @@ namespace DesktopNotes
 
 
         // =========================================================
-        // WINDOW-Ի ԵՐԿՐԱՉԱՓՈՒԹՅՈՒՆ
-        // =========================================================
-
-        // Թերթիկի շուրջ նվազագույն ազատ տարածությունը
-        // յուրաքանչյուր կողմում։
-        private const double WindowPadding = 10;
-
-        // Window-ի չափերը փոխվում են այս քայլերով։
-        private const double WindowStep = 20;
-
-
-        // =========================================================
         // CONSTRUCTOR
         // =========================================================
 
@@ -89,44 +38,21 @@ namespace DesktopNotes
         {
             InitializeComponent();
 
-            CreateFirstNote();
+            Note.Width = 300;
+            Note.Height = 220;
 
-            UpdateNavigationButtons();
-        }
+            NoteRotation.Angle = 0;
 
+            NoteText.FontFamily =
+                new FontFamily("Arial");
 
-        // =========================================================
-        // ԱՌԱՋԻՆ ԹԵՐԹԻԿ
-        // =========================================================
+            NoteText.FontSize = 18;
 
-        private void CreateFirstNote()
-        {
-            NoteData note = new NoteData
-            {
-                Created = DateTime.Now,
+            NoteText.FontWeight =
+                FontWeights.Normal;
 
-                Width = 300,
-                Height = 220,
-
-                Left = double.NaN,
-                Top = double.NaN,
-
-                Rotation = 0,
-
-                FontFamily = "Arial",
-                FontSize = 18,
-
-                FontWeight = FontWeights.Normal,
-                FontStyle = FontStyles.Normal,
-
-                Background =
-                    new SolidColorBrush(
-                        Color.FromRgb(255, 245, 157))
-            };
-
-            notes.Add(note);
-
-            LoadNote(note);
+            NoteText.FontStyle =
+                FontStyles.Normal;
 
             NoteText.Document.Blocks.Clear();
 
@@ -138,7 +64,19 @@ namespace DesktopNotes
 
             NoteText.Document.Blocks.Add(paragraph);
 
-            SaveCurrentText();
+            Loaded += MainWindow_Loaded;
+        }
+
+
+        // =========================================================
+        // WINDOW LOADED
+        // =========================================================
+
+        private void MainWindow_Loaded(
+            object sender,
+            RoutedEventArgs e)
+        {
+            Loaded -= MainWindow_Loaded;
 
             UpdateWindowSizeForRotation(false);
         }
@@ -152,249 +90,98 @@ namespace DesktopNotes
             object sender,
             RoutedEventArgs e)
         {
-            SaveCurrentNote();
+            // -----------------------------------------------------
+            // Նախ պահում ենք ընթացիկ թերթիկի կենտրոնը
+            // էկրանի կոորդինատներով։
+            // -----------------------------------------------------
 
-            NoteData current =
-                notes[currentNoteIndex];
+            Point centerOnScreen =
+                Note.PointToScreen(
+                    new Point(
+                        Note.ActualWidth / 2,
+                        Note.ActualHeight / 2));
 
-            NoteData newNote = new NoteData
-            {
-                Created = DateTime.Now,
 
-                Width = current.Width,
-                Height = current.Height,
+            // -----------------------------------------------------
+            // Ստեղծում ենք լրիվ նոր Window instance։
+            // -----------------------------------------------------
 
-                Left = current.Left,
-                Top = current.Top,
+            MainWindow newNote =
+                new MainWindow();
 
-                Rotation = current.Rotation,
 
-                Background = current.Background,
+            // -----------------------------------------------------
+            // Ժառանգում ենք ընթացիկ թերթիկի տեսքը։
+            // -----------------------------------------------------
 
-                FontFamily = current.FontFamily,
-                FontSize = current.FontSize,
+            newNote.Note.Width =
+                Note.Width;
 
-                FontWeight = current.FontWeight,
-                FontStyle = current.FontStyle,
+            newNote.Note.Height =
+                Note.Height;
 
-                TextRtf = ""
-            };
+            newNote.Note.Background =
+                Note.Background;
 
-            notes.Add(newNote);
+            newNote.NoteRotation.Angle =
+                NoteRotation.Angle;
 
-            currentNoteIndex =
-                notes.Count - 1;
+            newNote.NoteText.FontFamily =
+                NoteText.FontFamily;
 
-            LoadNote(newNote);
+            newNote.NoteText.FontSize =
+                NoteText.FontSize;
 
-            NoteText.Document.Blocks.Clear();
+            newNote.NoteText.FontWeight =
+                NoteText.FontWeight;
+
+            newNote.NoteText.FontStyle =
+                NoteText.FontStyle;
+
+
+            // -----------------------------------------------------
+            // Նոր թերթիկը դատարկ է։
+            // -----------------------------------------------------
+
+            newNote.NoteText.Document.Blocks.Clear();
 
             Paragraph paragraph =
                 new Paragraph();
 
-            NoteText.Document.Blocks.Add(paragraph);
-
-            NoteText.Focus();
-
-            UpdateNavigationButtons();
-        }
+            newNote.NoteText.Document.Blocks.Add(
+                paragraph);
 
 
-        // =========================================================
-        // ԹԵՐԹԻԿԻ ԲԵՌՆՈՒՄ
-        // =========================================================
+            // -----------------------------------------------------
+            // Window-ը նախ չափափոխենք նոր թերթիկի համար։
+            // -----------------------------------------------------
 
-        private void LoadNote(
-            NoteData note)
-        {
-            Note.Width = note.Width;
-            Note.Height = note.Height;
-
-            Note.Background = note.Background;
-
-            NoteRotation.Angle =
-                note.Rotation;
-
-            NoteText.FontFamily =
-                new FontFamily(note.FontFamily);
-
-            NoteText.FontSize =
-                note.FontSize;
-
-            NoteText.FontWeight =
-                note.FontWeight;
-
-            NoteText.FontStyle =
-                note.FontStyle;
-
-            if (!string.IsNullOrEmpty(note.TextRtf))
-            {
-                try
-                {
-                    byte[] bytes =
-                        Convert.FromBase64String(
-                            note.TextRtf);
-
-                    using MemoryStream stream =
-                        new MemoryStream(bytes);
-
-                    TextRange range =
-                        new TextRange(
-                            NoteText.Document.ContentStart,
-                            NoteText.Document.ContentEnd);
-
-                    range.Load(
-                        stream,
-                        DataFormats.Rtf);
-                }
-                catch
-                {
-                    NoteText.Document.Blocks.Clear();
-                }
-            }
-        }
+            newNote.UpdateWindowSizeForRotation(false);
 
 
-        // =========================================================
-        // ՏԵՔՍՏԻ ՊԱՀՊԱՆՈՒՄ
-        // =========================================================
+            // -----------------------------------------------------
+            // Նոր Window-ի թերթիկի կենտրոնը
+            // դնում ենք հին թերթիկի կենտրոնի վրա։
+            // -----------------------------------------------------
 
-        private void SaveCurrentText()
-        {
-            if (notes.Count == 0)
-                return;
+            newNote.Left =
+                centerOnScreen.X -
+                newNote.Width / 2;
 
-            NoteData note =
-                notes[currentNoteIndex];
-
-            TextRange range =
-                new TextRange(
-                    NoteText.Document.ContentStart,
-                    NoteText.Document.ContentEnd);
-
-            using MemoryStream stream =
-                new MemoryStream();
-
-            range.Save(
-                stream,
-                DataFormats.Rtf);
-
-            note.TextRtf =
-                Convert.ToBase64String(
-                    stream.ToArray());
-        }
+            newNote.Top =
+                centerOnScreen.Y -
+                newNote.Height / 2;
 
 
-        // =========================================================
-        // ԸՆԹԱՑԻԿ ԹԵՐԹԻԿԻ ՊԱՀՊԱՆՈՒՄ
-        // =========================================================
+            // -----------------------------------------------------
+            // Ցուցադրում ենք նոր պատուհանը։
+            // -----------------------------------------------------
 
-        private void SaveCurrentNote()
-        {
-            if (notes.Count == 0)
-                return;
+            newNote.Show();
 
-            NoteData note =
-                notes[currentNoteIndex];
+            newNote.Activate();
 
-            SaveCurrentText();
-
-            note.Width =
-                Note.Width;
-
-            note.Height =
-                Note.Height;
-
-            note.Rotation =
-                NoteRotation.Angle;
-
-            note.Background =
-                Note.Background;
-
-            note.FontFamily =
-                NoteText.FontFamily.Source;
-
-            note.FontSize =
-                NoteText.FontSize;
-
-            note.FontWeight =
-                NoteText.FontWeight;
-
-            note.FontStyle =
-                NoteText.FontStyle;
-
-            note.Left =
-                Left;
-
-            note.Top =
-                Top;
-        }
-
-
-        // =========================================================
-        // ՆԱԽՈՐԴ ԹԵՐԹԻԿ
-        // =========================================================
-
-        private void PreviousButton_Click(
-            object sender,
-            RoutedEventArgs e)
-        {
-            if (currentNoteIndex <= 0)
-                return;
-
-            SaveCurrentNote();
-
-            currentNoteIndex--;
-
-            LoadNote(
-                notes[currentNoteIndex]);
-
-            UpdateNavigationButtons();
-        }
-
-
-        // =========================================================
-        // ՀԱՋՈՐԴ ԹԵՐԹԻԿ
-        // =========================================================
-
-        private void NextButton_Click(
-            object sender,
-            RoutedEventArgs e)
-        {
-            if (currentNoteIndex >= notes.Count - 1)
-                return;
-
-            SaveCurrentNote();
-
-            currentNoteIndex++;
-
-            LoadNote(
-                notes[currentNoteIndex]);
-
-            UpdateNavigationButtons();
-        }
-
-
-        // =========================================================
-        // ՆԱՎԻԳԱՑԻԱՅԻ ԿՈՃԱԿՆԵՐ
-        // =========================================================
-
-        private void UpdateNavigationButtons()
-        {
-            if (currentNoteIndex > 0)
-                PreviousButton.Visibility =
-                    Visibility.Visible;
-            else
-                PreviousButton.Visibility =
-                    Visibility.Collapsed;
-
-            if (currentNoteIndex <
-                notes.Count - 1)
-                NextButton.Visibility =
-                    Visibility.Visible;
-            else
-                NextButton.Visibility =
-                    Visibility.Collapsed;
+            newNote.NoteText.Focus();
         }
 
 
@@ -408,8 +195,6 @@ namespace DesktopNotes
         {
             CloseButton.Visibility =
                 Visibility.Visible;
-
-            UpdateNavigationButtons();
         }
 
 
@@ -418,17 +203,9 @@ namespace DesktopNotes
             MouseEventArgs e)
         {
             if (!isRotating &&
-                !CloseButton.IsMouseOver &&
-                !PreviousButton.IsMouseOver &&
-                !NextButton.IsMouseOver)
+                !CloseButton.IsMouseOver)
             {
                 CloseButton.Visibility =
-                    Visibility.Collapsed;
-
-                PreviousButton.Visibility =
-                    Visibility.Collapsed;
-
-                NextButton.Visibility =
                     Visibility.Collapsed;
             }
         }
@@ -512,7 +289,6 @@ namespace DesktopNotes
             object sender,
             RoutedEventArgs e)
         {
-            SaveCurrentText();
         }
 
 
@@ -566,7 +342,7 @@ namespace DesktopNotes
 
 
         // =========================================================
-        // ԻՆՏԵՐԱԿՏԻՎ ՏԱՐՐԻ ՎՐԱ՞ ԵՆՔ
+        // ԻՆՏԵՐԱԿՏԻՎ ՏԱՐՐ
         // =========================================================
 
         private bool IsMouseOverInteractive(
@@ -582,8 +358,6 @@ namespace DesktopNotes
             {
                 if (current == NoteText ||
                     current == CloseButton ||
-                    current == PreviousButton ||
-                    current == NextButton ||
                     current == MoveArea)
                 {
                     return true;
@@ -623,19 +397,16 @@ namespace DesktopNotes
 
 
         // =========================================================
-        // ROTATION
+        // ROTATION START
         // =========================================================
 
         private void StartRotation(
             MouseButtonEventArgs e)
         {
-            // Մկնիկի դիրքը վերցնում ենք էկրանի կոորդինատներով։
             Point mouse =
                 PointToScreen(
                     e.GetPosition(MainGrid));
 
-            // Թերթիկի կենտրոնը նույնպես վերցնում ենք
-            // էկրանի կոորդինատներով։
             Point center =
                 Note.PointToScreen(
                     new Point(
@@ -658,6 +429,10 @@ namespace DesktopNotes
         }
 
 
+        // =========================================================
+        // ROTATION MOVE
+        // =========================================================
+
         private void Note_MouseMove(
             object sender,
             MouseEventArgs e)
@@ -665,8 +440,6 @@ namespace DesktopNotes
             if (!isRotating)
                 return;
 
-            // Մկնիկը եւ կենտրոնը երկուսն էլ
-            // նույն՝ էկրանի կոորդինատային համակարգում են։
             Point mouse =
                 PointToScreen(
                     e.GetPosition(MainGrid));
@@ -694,13 +467,15 @@ namespace DesktopNotes
             NoteRotation.Angle =
                 newAngle;
 
-            // Անհրաժեշտության դեպքում մեծացնում ենք Window-ը։
-            // Փոքրացում չենք կատարում։
             UpdateWindowSizeForRotation(true);
 
             e.Handled = true;
         }
 
+
+        // =========================================================
+        // ROTATION END
+        // =========================================================
 
         private void Note_MouseLeftButtonUp(
             object sender,
@@ -712,8 +487,6 @@ namespace DesktopNotes
             isRotating = false;
 
             Note.ReleaseMouseCapture();
-
-            SaveCurrentNote();
 
             e.Handled = true;
         }
@@ -736,7 +509,9 @@ namespace DesktopNotes
                 NoteRotation.Angle;
 
             double radians =
-                angle * Math.PI / 180.0;
+                angle *
+                Math.PI /
+                180.0;
 
             double cos =
                 Math.Abs(
@@ -746,7 +521,6 @@ namespace DesktopNotes
                 Math.Abs(
                     Math.Sin(radians));
 
-            // Պտտված ուղղանկյան bounding box-ը։
             double rotatedWidth =
                 Note.ActualWidth * cos +
                 Note.ActualHeight * sin;
@@ -755,7 +529,6 @@ namespace DesktopNotes
                 Note.ActualWidth * sin +
                 Note.ActualHeight * cos;
 
-            // 10 px պահուստ յուրաքանչյուր կողմում։
             double requiredWidth =
                 rotatedWidth +
                 WindowPadding * 2;
@@ -764,7 +537,6 @@ namespace DesktopNotes
                 rotatedHeight +
                 WindowPadding * 2;
 
-            // Window-ի չափերը կլորացնում ենք 20 px քայլերի։
             double newWidth =
                 RoundUpToStep(
                     requiredWidth,
@@ -775,26 +547,17 @@ namespace DesktopNotes
                     requiredHeight,
                     WindowStep);
 
-            // Window-ը փոքրացնել չենք անում։
             if (newWidth <= Width &&
                 newHeight <= Height)
             {
                 return;
             }
 
-            // Պահում ենք թերթիկի կենտրոնի էկրանի
-            // կոորդինատը՝ մինչեւ Window-ի չափափոխումը։
             Point centerOnScreen =
                 Note.PointToScreen(
                     new Point(
                         Note.ActualWidth / 2,
                         Note.ActualHeight / 2));
-
-            double oldWidth =
-                Width;
-
-            double oldHeight =
-                Height;
 
             Width =
                 Math.Max(
@@ -808,9 +571,6 @@ namespace DesktopNotes
 
             if (keepCenter)
             {
-                // Window-ի չափի փոփոխությունից հետո
-                // կենտրոնը վերադարձնում ենք նույն
-                // էկրանի կետին։
                 Left =
                     centerOnScreen.X -
                     Width / 2;
@@ -818,23 +578,6 @@ namespace DesktopNotes
                 Top =
                     centerOnScreen.Y -
                     Height / 2;
-            }
-            else
-            {
-                // Սովորական սկզբնական վիճակ։
-                if (!double.IsNaN(Left))
-                {
-                    Left =
-                        centerOnScreen.X -
-                        Width / 2;
-                }
-
-                if (!double.IsNaN(Top))
-                {
-                    Top =
-                        centerOnScreen.Y -
-                        Height / 2;
-                }
             }
         }
 
@@ -886,8 +629,7 @@ namespace DesktopNotes
             object sender,
             RoutedEventArgs e)
         {
-            ApplyFontFamily(
-                "Arial");
+            ApplyFontFamily("Arial");
         }
 
 
@@ -895,8 +637,7 @@ namespace DesktopNotes
             object sender,
             RoutedEventArgs e)
         {
-            ApplyFontFamily(
-                "Times New Roman");
+            ApplyFontFamily("Times New Roman");
         }
 
 
@@ -904,8 +645,7 @@ namespace DesktopNotes
             object sender,
             RoutedEventArgs e)
         {
-            ApplyFontFamily(
-                "Courier New");
+            ApplyFontFamily("Courier New");
         }
 
 
@@ -928,10 +668,6 @@ namespace DesktopNotes
                 NoteText.FontFamily =
                     new FontFamily(fontName);
             }
-
-            SaveCurrentText();
-
-            SaveCurrentNote();
         }
 
 
@@ -1003,10 +739,9 @@ namespace DesktopNotes
             }
             else
             {
-                NoteText.FontSize = size;
+                NoteText.FontSize =
+                    size;
             }
-
-            SaveCurrentText();
         }
 
 
@@ -1087,8 +822,6 @@ namespace DesktopNotes
                 NoteText.FontWeight =
                     weight;
             }
-
-            SaveCurrentText();
         }
 
 
@@ -1111,8 +844,6 @@ namespace DesktopNotes
                 NoteText.FontStyle =
                     style;
             }
-
-            SaveCurrentText();
         }
 
 
@@ -1196,8 +927,6 @@ namespace DesktopNotes
                 NoteText.Foreground =
                     brush;
             }
-
-            SaveCurrentText();
         }
     }
 }
