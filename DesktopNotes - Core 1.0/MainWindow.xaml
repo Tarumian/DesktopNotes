@@ -1,0 +1,242 @@
+﻿<Window x:Class="DesktopNotes.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Desktop Note"
+        Width="500"
+        Height="500"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="True">
+
+    <Grid x:Name="MainGrid">
+
+        <Border x:Name="Note"
+                Width="300"
+                Height="220"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="#FFF59D"
+                CornerRadius="3"
+                BorderBrush="#D8C95A"
+                BorderThickness="1"
+                MouseEnter="Note_MouseEnter"
+                MouseLeave="Note_MouseLeave"
+                MouseLeftButtonDown="Note_MouseLeftButtonDown"
+                MouseMove="Note_MouseMove"
+                MouseLeftButtonUp="Note_MouseLeftButtonUp">
+
+            <!-- ================================================= -->
+            <!-- ԱՋ ԿՏՏՈՑԻ ՀՐԱՄԱՆԱՑԱՆԿ -->
+            <!-- ================================================= -->
+
+            <Border.ContextMenu>
+
+                <ContextMenu x:Name="NoteContextMenu">
+
+                    <!-- ՏԱՌԱՏԵՍԱԿ -->
+
+                    <MenuItem Header="Տառատեսակ">
+
+                        <MenuItem Header="Arial"
+                                  Click="FontFamily_Click"/>
+
+                        <MenuItem Header="Times New Roman"
+                                  Click="FontFamily_Click"/>
+
+                        <MenuItem Header="Georgia"
+                                  Click="FontFamily_Click"/>
+
+                        <MenuItem Header="Calibri"
+                                  Click="FontFamily_Click"/>
+
+                        <MenuItem Header="Verdana"
+                                  Click="FontFamily_Click"/>
+
+                    </MenuItem>
+
+                    <!-- ԿԵՏԱՉԱՓ -->
+
+                    <MenuItem Header="Կետաչափ">
+
+                        <MenuItem Header="10 pt"
+                                  Tag="10"
+                                  Click="FontSize_Click"/>
+
+                        <MenuItem Header="12 pt"
+                                  Tag="12"
+                                  Click="FontSize_Click"/>
+
+                        <MenuItem Header="14 pt"
+                                  Tag="14"
+                                  Click="FontSize_Click"/>
+
+                        <MenuItem Header="16 pt"
+                                  Tag="16"
+                                  Click="FontSize_Click"/>
+
+                        <MenuItem Header="18 pt"
+                                  Tag="18"
+                                  Click="FontSize_Click"/>
+
+                        <MenuItem Header="20 pt"
+                                  Tag="20"
+                                  Click="FontSize_Click"/>
+
+                        <MenuItem Header="24 pt"
+                                  Tag="24"
+                                  Click="FontSize_Click"/>
+
+                        <MenuItem Header="28 pt"
+                                  Tag="28"
+                                  Click="FontSize_Click"/>
+
+                        <MenuItem Header="32 pt"
+                                  Tag="32"
+                                  Click="FontSize_Click"/>
+
+                    </MenuItem>
+
+                    <Separator/>
+
+                    <!-- ԹԱՎ -->
+
+                    <MenuItem Header="Թավ"
+                              IsCheckable="True"
+                              Click="Bold_Click"/>
+
+                    <!-- ՇԵՂ -->
+
+                    <MenuItem Header="Շեղ"
+                              IsCheckable="True"
+                              Click="Italic_Click"/>
+
+                    <!-- ԹԱՎ ՇԵՂ -->
+
+                    <MenuItem Header="Թավ շեղ"
+                              IsCheckable="True"
+                              Click="BoldItalic_Click"/>
+
+                    <Separator/>
+
+                    <!-- ՏԱՌԻ ԳՈՒՅՆ -->
+
+                    <MenuItem Header="Տառի գույն">
+
+                        <MenuItem Header="Սեւ"
+                                  Tag="#222222"
+                                  Click="TextColor_Click"/>
+
+                        <MenuItem Header="Մուգ մոխրագույն"
+                                  Tag="#555555"
+                                  Click="TextColor_Click"/>
+
+                        <MenuItem Header="Կարմիր"
+                                  Tag="#B00020"
+                                  Click="TextColor_Click"/>
+
+                        <MenuItem Header="Կապույտ"
+                                  Tag="#174EA6"
+                                  Click="TextColor_Click"/>
+
+                        <MenuItem Header="Կանաչ"
+                                  Tag="#137333"
+                                  Click="TextColor_Click"/>
+
+                        <MenuItem Header="Մանուշակագույն"
+                                  Tag="#7B1FA2"
+                                  Click="TextColor_Click"/>
+
+                    </MenuItem>
+
+                </ContextMenu>
+
+            </Border.ContextMenu>
+
+            <!-- ================================================= -->
+            <!-- ՊՏՏՄԱՆ ՏՐԱՆՍՖՈՐՄԱՑԻԱ -->
+            <!-- ================================================= -->
+
+            <Border.RenderTransform>
+                <RotateTransform x:Name="NoteRotation"
+                                 Angle="0"/>
+            </Border.RenderTransform>
+
+            <Border.RenderTransformOrigin>
+                <Point X="0.5" Y="0.5"/>
+            </Border.RenderTransformOrigin>
+
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="12"
+                                  ShadowDepth="4"
+                                  Opacity="0.35"/>
+            </Border.Effect>
+
+            <Grid>
+
+                <!-- ================================================= -->
+                <!-- ՎԵՐԵՒԻ ՏԵՂԱՓՈԽՄԱՆ ԳՈՏԻ -->
+                <!-- ================================================= -->
+
+                <Border x:Name="MoveArea"
+                        Height="18"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"
+                        Background="Transparent"
+                        Cursor="SizeAll"
+                        MouseLeftButtonDown="MoveArea_MouseLeftButtonDown"/>
+
+                <!-- ================================================= -->
+                <!-- ՏԵՔՍՏ -->
+                <!-- ================================================= -->
+
+                <RichTextBox x:Name="NoteText"
+                             Width="250"
+                             Height="150"
+                             HorizontalAlignment="Left"
+                             VerticalAlignment="Top"
+                             Margin="18,36,0,0"
+                             FontFamily="Arial"
+                             FontSize="18"
+                             Foreground="#222222"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Padding="0"
+                             VerticalScrollBarVisibility="Auto"
+                             HorizontalScrollBarVisibility="Disabled"
+                             AcceptsReturn="True"
+                             Cursor="IBeam"
+                             ContextMenu="{x:Null}"
+                             MouseRightButtonDown="NoteText_MouseRightButtonDown"/>
+
+                <!-- ================================================= -->
+                <!-- ՓԱԿԵԼՈՒ X -->
+                <!-- ================================================= -->
+
+                <Button x:Name="CloseButton"
+                        Content="×"
+                        Width="25"
+                        Height="25"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Margin="0,-8,-5,0"
+                        FontSize="18"
+                        FontWeight="Bold"
+                        Foreground="#555555"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Visibility="Collapsed"
+                        IsHitTestVisible="True"
+                        MouseEnter="CloseButton_MouseEnter"
+                        MouseLeave="CloseButton_MouseLeave"
+                        Click="CloseButton_Click"
+                        ToolTip="Փակել թղթիկը"/>
+
+            </Grid>
+
+        </Border>
+
+    </Grid>
+
+</Window>
