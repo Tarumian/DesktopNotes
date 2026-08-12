@@ -12,6 +12,66 @@
 
     <Grid x:Name="MainGrid">
 
+        <!-- ===================================================== -->
+        <!-- ՀՐԱՄԱՆԱՑԱՆԿ -->
+        <!-- ===================================================== -->
+
+        <Grid.ContextMenu>
+            <ContextMenu x:Name="NoteContextMenu"
+                         Opened="NoteContextMenu_Opened">
+
+                <MenuItem Header="Նոր թերթիկ"
+                          Click="NewNote_Click"/>
+
+                <Separator/>
+
+                <MenuItem Header="Տառատեսակ">
+                    <MenuItem Header="Arial"
+                              Click="FontArial_Click"/>
+                    <MenuItem Header="Times New Roman"
+                              Click="FontTimes_Click"/>
+                    <MenuItem Header="Courier New"
+                              Click="FontCourier_Click"/>
+                </MenuItem>
+
+                <MenuItem Header="Կետաչափ">
+                    <MenuItem Header="14"
+                              Click="FontSize14_Click"/>
+                    <MenuItem Header="16"
+                              Click="FontSize16_Click"/>
+                    <MenuItem Header="18"
+                              Click="FontSize18_Click"/>
+                    <MenuItem Header="20"
+                              Click="FontSize20_Click"/>
+                    <MenuItem Header="24"
+                              Click="FontSize24_Click"/>
+                    <MenuItem Header="28"
+                              Click="FontSize28_Click"/>
+                </MenuItem>
+
+                <MenuItem Header="Ոճ">
+                    <MenuItem Header="Թավ"
+                              Click="Bold_Click"/>
+                    <MenuItem Header="Շեղ"
+                              Click="Italic_Click"/>
+                    <MenuItem Header="Թավ շեղ"
+                              Click="BoldItalic_Click"/>
+                    <MenuItem Header="Սովորական"
+                              Click="Normal_Click"/>
+                </MenuItem>
+
+                <Separator/>
+
+                <MenuItem Header="Փակել"
+                          Click="CloseMenu_Click"/>
+            </ContextMenu>
+        </Grid.ContextMenu>
+
+
+        <!-- ===================================================== -->
+        <!-- ԹԵՐԹԻԿ -->
+        <!-- ===================================================== -->
+
         <Border x:Name="Note"
                 Width="300"
                 Height="220"
@@ -21,142 +81,13 @@
                 CornerRadius="3"
                 BorderBrush="#D8C95A"
                 BorderThickness="1"
+
                 MouseEnter="Note_MouseEnter"
                 MouseLeave="Note_MouseLeave"
                 MouseLeftButtonDown="Note_MouseLeftButtonDown"
                 MouseMove="Note_MouseMove"
-                MouseLeftButtonUp="Note_MouseLeftButtonUp">
-
-            <!-- ================================================= -->
-            <!-- ԱՋ ԿՏՏՈՑԻ ՀՐԱՄԱՆԱՑԱՆԿ -->
-            <!-- ================================================= -->
-
-            <Border.ContextMenu>
-
-                <ContextMenu x:Name="NoteContextMenu">
-
-                    <!-- ՏԱՌԱՏԵՍԱԿ -->
-
-                    <MenuItem Header="Տառատեսակ">
-
-                        <MenuItem Header="Arial"
-                                  Click="FontFamily_Click"/>
-
-                        <MenuItem Header="Times New Roman"
-                                  Click="FontFamily_Click"/>
-
-                        <MenuItem Header="Georgia"
-                                  Click="FontFamily_Click"/>
-
-                        <MenuItem Header="Calibri"
-                                  Click="FontFamily_Click"/>
-
-                        <MenuItem Header="Verdana"
-                                  Click="FontFamily_Click"/>
-
-                    </MenuItem>
-
-                    <!-- ԿԵՏԱՉԱՓ -->
-
-                    <MenuItem Header="Կետաչափ">
-
-                        <MenuItem Header="10 pt"
-                                  Tag="10"
-                                  Click="FontSize_Click"/>
-
-                        <MenuItem Header="12 pt"
-                                  Tag="12"
-                                  Click="FontSize_Click"/>
-
-                        <MenuItem Header="14 pt"
-                                  Tag="14"
-                                  Click="FontSize_Click"/>
-
-                        <MenuItem Header="16 pt"
-                                  Tag="16"
-                                  Click="FontSize_Click"/>
-
-                        <MenuItem Header="18 pt"
-                                  Tag="18"
-                                  Click="FontSize_Click"/>
-
-                        <MenuItem Header="20 pt"
-                                  Tag="20"
-                                  Click="FontSize_Click"/>
-
-                        <MenuItem Header="24 pt"
-                                  Tag="24"
-                                  Click="FontSize_Click"/>
-
-                        <MenuItem Header="28 pt"
-                                  Tag="28"
-                                  Click="FontSize_Click"/>
-
-                        <MenuItem Header="32 pt"
-                                  Tag="32"
-                                  Click="FontSize_Click"/>
-
-                    </MenuItem>
-
-                    <Separator/>
-
-                    <!-- ԹԱՎ -->
-
-                    <MenuItem Header="Թավ"
-                              IsCheckable="True"
-                              Click="Bold_Click"/>
-
-                    <!-- ՇԵՂ -->
-
-                    <MenuItem Header="Շեղ"
-                              IsCheckable="True"
-                              Click="Italic_Click"/>
-
-                    <!-- ԹԱՎ ՇԵՂ -->
-
-                    <MenuItem Header="Թավ շեղ"
-                              IsCheckable="True"
-                              Click="BoldItalic_Click"/>
-
-                    <Separator/>
-
-                    <!-- ՏԱՌԻ ԳՈՒՅՆ -->
-
-                    <MenuItem Header="Տառի գույն">
-
-                        <MenuItem Header="Սեւ"
-                                  Tag="#222222"
-                                  Click="TextColor_Click"/>
-
-                        <MenuItem Header="Մուգ մոխրագույն"
-                                  Tag="#555555"
-                                  Click="TextColor_Click"/>
-
-                        <MenuItem Header="Կարմիր"
-                                  Tag="#B00020"
-                                  Click="TextColor_Click"/>
-
-                        <MenuItem Header="Կապույտ"
-                                  Tag="#174EA6"
-                                  Click="TextColor_Click"/>
-
-                        <MenuItem Header="Կանաչ"
-                                  Tag="#137333"
-                                  Click="TextColor_Click"/>
-
-                        <MenuItem Header="Մանուշակագույն"
-                                  Tag="#7B1FA2"
-                                  Click="TextColor_Click"/>
-
-                    </MenuItem>
-
-                </ContextMenu>
-
-            </Border.ContextMenu>
-
-            <!-- ================================================= -->
-            <!-- ՊՏՏՄԱՆ ՏՐԱՆՍՖՈՐՄԱՑԻԱ -->
-            <!-- ================================================= -->
+                MouseLeftButtonUp="Note_MouseLeftButtonUp"
+                MouseRightButtonDown="Note_MouseRightButtonDown">
 
             <Border.RenderTransform>
                 <RotateTransform x:Name="NoteRotation"
@@ -164,7 +95,8 @@
             </Border.RenderTransform>
 
             <Border.RenderTransformOrigin>
-                <Point X="0.5" Y="0.5"/>
+                <Point X="0.5"
+                       Y="0.5"/>
             </Border.RenderTransformOrigin>
 
             <Border.Effect>
@@ -172,6 +104,7 @@
                                   ShadowDepth="4"
                                   Opacity="0.35"/>
             </Border.Effect>
+
 
             <Grid>
 
@@ -186,6 +119,7 @@
                         Background="Transparent"
                         Cursor="SizeAll"
                         MouseLeftButtonDown="MoveArea_MouseLeftButtonDown"/>
+
 
                 <!-- ================================================= -->
                 <!-- ՏԵՔՍՏ -->
@@ -210,8 +144,9 @@
                              ContextMenu="{x:Null}"
                              MouseRightButtonDown="NoteText_MouseRightButtonDown"/>
 
+
                 <!-- ================================================= -->
-                <!-- ՓԱԿԵԼՈՒ X -->
+                <!-- ՓԱԿԵԼՈՒ × -->
                 <!-- ================================================= -->
 
                 <Button x:Name="CloseButton"
@@ -231,12 +166,53 @@
                         MouseEnter="CloseButton_MouseEnter"
                         MouseLeave="CloseButton_MouseLeave"
                         Click="CloseButton_Click"
-                        ToolTip="Փակել թղթիկը"/>
+                        ToolTip="Փակել թերթիկը"/>
+
+
+                <!-- ================================================= -->
+                <!-- ՆԱԽՈՐԴ ԹԵՐԹԻԿ -->
+                <!-- ================================================= -->
+
+                <Button x:Name="PreviousButton"
+                        Content="‹"
+                        Width="28"
+                        Height="28"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        Margin="4,0,0,4"
+                        FontSize="24"
+                        Foreground="#777777"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Visibility="Collapsed"
+                        Cursor="Hand"
+                        Click="PreviousButton_Click"
+                        ToolTip="Նախորդ թերթիկ"/>
+
+
+                <!-- ================================================= -->
+                <!-- ՀԱՋՈՐԴ ԹԵՐԹԻԿ -->
+                <!-- ================================================= -->
+
+                <Button x:Name="NextButton"
+                        Content="›"
+                        Width="28"
+                        Height="28"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom"
+                        Margin="0,0,4,4"
+                        FontSize="24"
+                        Foreground="#777777"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Visibility="Collapsed"
+                        Cursor="Hand"
+                        Click="NextButton_Click"
+                        ToolTip="Հաջորդ թերթիկ"/>
 
             </Grid>
 
         </Border>
 
     </Grid>
-
 </Window>

@@ -1,14 +1,65 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Documents;
 
 namespace DesktopNotes
 {
     public partial class MainWindow : Window
     {
+        // =========================================================
+        // ԹԵՐԹԻԿԻ ՏՎՅԱԼՆԵՐ
+        // =========================================================
+
+        private class NoteData
+        {
+            public DateTime Created { get; set; }
+
+            public string TextRtf { get; set; } = "";
+
+            public double Width { get; set; }
+            public double Height { get; set; }
+
+            public double Left { get; set; }
+            public double Top { get; set; }
+
+            public double Rotation { get; set; }
+
+            public Brush Background { get; set; }
+                = new SolidColorBrush(Color.FromRgb(255, 245, 157));
+
+            public string FontFamily { get; set; }
+                = "Arial";
+
+            public double FontSize { get; set; }
+                = 18;
+
+            public FontWeight FontWeight { get; set; }
+                = FontWeights.Normal;
+
+            public FontStyle FontStyle { get; set; }
+                = FontStyles.Normal;
+        }
+
+
+        // =========================================================
+        // ԹԵՐԹԻԿՆԵՐԻ ՑԱՆԿ
+        // =========================================================
+
+        private readonly List<NoteData> notes =
+            new List<NoteData>();
+
+        private int currentNoteIndex = 0;
+
+
+        // =========================================================
+        // ՊՏՏՈՒՄ
+        // =========================================================
+
         private bool isRotating = false;
 
         private double rotationStartAngle;
@@ -16,53 +67,320 @@ namespace DesktopNotes
 
         private const double CenterRadius = 15;
 
-        private FontFamily currentFontFamily =
-            new FontFamily("Arial");
 
-        private double currentFontSize = 18;
-
-        private FontWeight currentFontWeight =
-            FontWeights.Normal;
-
-        private FontStyle currentFontStyle =
-            FontStyles.Normal;
-
-        private Brush currentForeground =
-            new SolidColorBrush(
-                Color.FromRgb(34, 34, 34));
+        // =========================================================
+        // CONSTRUCTOR
+        // =========================================================
 
         public MainWindow()
         {
             InitializeComponent();
+
+            CreateFirstNote();
+
+            UpdateNavigationButtons();
+        }
+
+
+        // =========================================================
+        // ԱՌԱՋԻՆ ԹԵՐԹԻԿ
+        // =========================================================
+
+        private void CreateFirstNote()
+        {
+            NoteData note = new NoteData
+            {
+                Created = DateTime.Now,
+                Width = 300,
+                Height = 220,
+                Left = double.NaN,
+                Top = double.NaN,
+                Rotation = 0,
+                FontFamily = "Arial",
+                FontSize = 18,
+                FontWeight = FontWeights.Normal,
+                FontStyle = FontStyles.Normal,
+                Background =
+                    new SolidColorBrush(
+                        Color.FromRgb(255, 245, 157))
+            };
+
+            notes.Add(note);
+
+            LoadNote(note);
 
             NoteText.Document.Blocks.Clear();
 
             Paragraph paragraph =
                 new Paragraph();
 
-            Run run =
-                new Run("Իմ առաջին թղթիկը");
+            paragraph.Inlines.Add(
+                new Run("Իմ առաջին թղթիկը"));
 
-            run.FontFamily =
-                currentFontFamily;
+            NoteText.Document.Blocks.Add(paragraph);
 
-            run.FontSize =
-                currentFontSize;
-
-            run.FontWeight =
-                currentFontWeight;
-
-            run.FontStyle =
-                currentFontStyle;
-
-            run.Foreground =
-                currentForeground;
-
-            paragraph.Inlines.Add(run);
-
-            NoteText.Document.Blocks.Add(
-                paragraph);
+            SaveCurrentText();
         }
+
+
+        // =========================================================
+        // ՆՈՐ ԹԵՐԹԻԿ
+        // =========================================================
+
+        private void NewNote_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SaveCurrentNote();
+
+            NoteData current =
+                notes[currentNoteIndex];
+
+            NoteData newNote = new NoteData
+            {
+                Created = DateTime.Now,
+
+                // Ժառանգում ենք տեսքը
+                Width = current.Width,
+                Height = current.Height,
+
+                Left = current.Left,
+                Top = current.Top,
+
+                Rotation = current.Rotation,
+
+                Background = current.Background,
+
+                FontFamily = current.FontFamily,
+                FontSize = current.FontSize,
+                FontWeight = current.FontWeight,
+                FontStyle = current.FontStyle,
+
+                // Տեքստը նոր թերթիկում դատարկ է
+                TextRtf = ""
+            };
+
+            notes.Add(newNote);
+
+            currentNoteIndex =
+                notes.Count - 1;
+
+            LoadNote(newNote);
+
+            NoteText.Document.Blocks.Clear();
+
+            Paragraph paragraph =
+                new Paragraph();
+
+            NoteText.Document.Blocks.Add(paragraph);
+
+            NoteText.Focus();
+
+            UpdateNavigationButtons();
+        }
+
+
+        // =========================================================
+        // ԹԵՐԹԻԿԻ ԲԵՌՆՈՒՄ
+        // =========================================================
+
+        private void LoadNote(
+            NoteData note)
+        {
+            Note.Width = note.Width;
+            Note.Height = note.Height;
+
+            Note.Background = note.Background;
+
+            NoteRotation.Angle =
+                note.Rotation;
+
+            NoteText.FontFamily =
+                new FontFamily(note.FontFamily);
+
+            NoteText.FontSize =
+                note.FontSize;
+
+            NoteText.FontWeight =
+                note.FontWeight;
+
+            NoteText.FontStyle =
+                note.FontStyle;
+
+            if (!string.IsNullOrEmpty(note.TextRtf))
+            {
+                try
+                {
+                    byte[] bytes =
+                        Convert.FromBase64String(
+                            note.TextRtf);
+
+                    using MemoryStream stream =
+                        new MemoryStream(bytes);
+
+                    TextRange range =
+                        new TextRange(
+                            NoteText.Document.ContentStart,
+                            NoteText.Document.ContentEnd);
+
+                    range.Load(
+                        stream,
+                        DataFormats.Rtf);
+                }
+                catch
+                {
+                    NoteText.Document.Blocks.Clear();
+                }
+            }
+        }
+
+
+        // =========================================================
+        // ՏԵՔՍՏԻ ՊԱՀՊԱՆՈՒՄ
+        // =========================================================
+
+        private void SaveCurrentText()
+        {
+            if (notes.Count == 0)
+                return;
+
+            NoteData note =
+                notes[currentNoteIndex];
+
+            TextRange range =
+                new TextRange(
+                    NoteText.Document.ContentStart,
+                    NoteText.Document.ContentEnd);
+
+            using MemoryStream stream =
+                new MemoryStream();
+
+            range.Save(
+                stream,
+                DataFormats.Rtf);
+
+            note.TextRtf =
+                Convert.ToBase64String(
+                    stream.ToArray());
+        }
+
+
+        // =========================================================
+        // ԸՆԹԱՑԻԿ ԹԵՐԹԻԿԻ ՊԱՀՊԱՆՈՒՄ
+        // =========================================================
+
+        private void SaveCurrentNote()
+        {
+            if (notes.Count == 0)
+                return;
+
+            NoteData note =
+                notes[currentNoteIndex];
+
+            SaveCurrentText();
+
+            note.Width =
+                Note.Width;
+
+            note.Height =
+                Note.Height;
+
+            note.Rotation =
+                NoteRotation.Angle;
+
+            note.Background =
+                Note.Background;
+
+            note.FontFamily =
+                NoteText.FontFamily.Source;
+
+            note.FontSize =
+                NoteText.FontSize;
+
+            note.FontWeight =
+                NoteText.FontWeight;
+
+            note.FontStyle =
+                NoteText.FontStyle;
+
+            note.Left =
+                Left;
+
+            note.Top =
+                Top;
+        }
+
+
+        // =========================================================
+        // ՆԱԽՈՐԴ ԹԵՐԹԻԿ
+        // =========================================================
+
+        private void PreviousButton_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            if (currentNoteIndex <= 0)
+                return;
+
+            SaveCurrentNote();
+
+            currentNoteIndex--;
+
+            LoadNote(
+                notes[currentNoteIndex]);
+
+            UpdateNavigationButtons();
+        }
+
+
+        // =========================================================
+        // ՀԱՋՈՐԴ ԹԵՐԹԻԿ
+        // =========================================================
+
+        private void NextButton_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            if (currentNoteIndex >= notes.Count - 1)
+                return;
+
+            SaveCurrentNote();
+
+            currentNoteIndex++;
+
+            LoadNote(
+                notes[currentNoteIndex]);
+
+            UpdateNavigationButtons();
+        }
+
+
+        // =========================================================
+        // ՆԱՎԻԳԱՑԻԱՅԻ ԿՈՃԱԿՆԵՐ
+        // =========================================================
+
+        private void UpdateNavigationButtons()
+        {
+            if (currentNoteIndex > 0)
+                PreviousButton.Visibility =
+                    Visibility.Visible;
+            else
+                PreviousButton.Visibility =
+                    Visibility.Collapsed;
+
+            if (currentNoteIndex <
+                notes.Count - 1)
+                NextButton.Visibility =
+                    Visibility.Visible;
+            else
+                NextButton.Visibility =
+                    Visibility.Collapsed;
+        }
+
+
+        // =========================================================
+        // HOVER
+        // =========================================================
 
         private void Note_MouseEnter(
             object sender,
@@ -70,19 +388,36 @@ namespace DesktopNotes
         {
             CloseButton.Visibility =
                 Visibility.Visible;
+
+            UpdateNavigationButtons();
         }
+
 
         private void Note_MouseLeave(
             object sender,
             MouseEventArgs e)
         {
             if (!isRotating &&
-                !CloseButton.IsMouseOver)
+                !CloseButton.IsMouseOver &&
+                !PreviousButton.IsMouseOver &&
+                !NextButton.IsMouseOver)
             {
                 CloseButton.Visibility =
                     Visibility.Collapsed;
+
+                PreviousButton.Visibility =
+                    currentNoteIndex > 0
+                        ? Visibility.Collapsed
+                        : Visibility.Collapsed;
+
+                NextButton.Visibility =
+                    currentNoteIndex <
+                    notes.Count - 1
+                        ? Visibility.Collapsed
+                        : Visibility.Collapsed;
             }
         }
+
 
         private void CloseButton_MouseEnter(
             object sender,
@@ -91,6 +426,7 @@ namespace DesktopNotes
             CloseButton.Visibility =
                 Visibility.Visible;
         }
+
 
         private void CloseButton_MouseLeave(
             object sender,
@@ -103,12 +439,71 @@ namespace DesktopNotes
             }
         }
 
+
+        // =========================================================
+        // ՓԱԿԵԼ
+        // =========================================================
+
         private void CloseButton_Click(
             object sender,
             RoutedEventArgs e)
         {
             Close();
         }
+
+
+        private void CloseMenu_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            Close();
+        }
+
+
+        // =========================================================
+        // RIGHT CLICK
+        // =========================================================
+
+        private void Note_MouseRightButtonDown(
+            object sender,
+            MouseButtonEventArgs e)
+        {
+            OpenNoteContextMenu(e);
+        }
+
+
+        private void NoteText_MouseRightButtonDown(
+            object sender,
+            MouseButtonEventArgs e)
+        {
+            OpenNoteContextMenu(e);
+        }
+
+
+        private void OpenNoteContextMenu(
+            MouseButtonEventArgs e)
+        {
+            NoteContextMenu.PlacementTarget =
+                Note;
+
+            NoteContextMenu.IsOpen =
+                true;
+
+            e.Handled = true;
+        }
+
+
+        private void NoteContextMenu_Opened(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SaveCurrentText();
+        }
+
+
+        // =========================================================
+        // MOVE
+        // =========================================================
 
         private void MoveArea_MouseLeftButtonDown(
             object sender,
@@ -124,6 +519,11 @@ namespace DesktopNotes
             {
             }
         }
+
+
+        // =========================================================
+        // ԿԵՆՏՐՈՆԱԿԱՆ ՇՐՋԱՆ
+        // =========================================================
 
         private bool IsInsideCenter(
             Point point)
@@ -145,10 +545,16 @@ namespace DesktopNotes
                     dx * dx +
                     dy * dy);
 
-            return distance < CenterRadius;
+            return distance <
+                   CenterRadius;
         }
 
-        private bool IsMouseOverText(
+
+        // =========================================================
+        // ԻՆՏԵՐԱԿՏԻՎ ՏԱՐՐԻ ՎՐԱ՞ ԵՆՔ
+        // =========================================================
+
+        private bool IsMouseOverInteractive(
             DependencyObject? source)
         {
             if (source == null)
@@ -159,8 +565,14 @@ namespace DesktopNotes
 
             while (current != null)
             {
-                if (current == NoteText)
+                if (current == NoteText ||
+                    current == CloseButton ||
+                    current == PreviousButton ||
+                    current == NextButton ||
+                    current == MoveArea)
+                {
                     return true;
+                }
 
                 current =
                     VisualTreeHelper.GetParent(
@@ -170,11 +582,16 @@ namespace DesktopNotes
             return false;
         }
 
+
+        // =========================================================
+        // ԹԵՐԹԻԿԻ ՎՐԱ ՍԵՂՄՈՒՄ
+        // =========================================================
+
         private void Note_MouseLeftButtonDown(
             object sender,
             MouseButtonEventArgs e)
         {
-            if (IsMouseOverText(
+            if (IsMouseOverInteractive(
                     e.OriginalSource as DependencyObject))
             {
                 return;
@@ -188,6 +605,11 @@ namespace DesktopNotes
 
             StartRotation(e);
         }
+
+
+        // =========================================================
+        // ROTATION
+        // =========================================================
 
         private void StartRotation(
             MouseButtonEventArgs e)
@@ -216,6 +638,7 @@ namespace DesktopNotes
 
             e.Handled = true;
         }
+
 
         private void Note_MouseMove(
             object sender,
@@ -251,6 +674,7 @@ namespace DesktopNotes
             e.Handled = true;
         }
 
+
         private void Note_MouseLeftButtonUp(
             object sender,
             MouseButtonEventArgs e)
@@ -262,233 +686,15 @@ namespace DesktopNotes
 
             Note.ReleaseMouseCapture();
 
-            if (!Note.IsMouseOver &&
-                !CloseButton.IsMouseOver)
-            {
-                CloseButton.Visibility =
-                    Visibility.Collapsed;
-            }
+            SaveCurrentNote();
 
             e.Handled = true;
         }
 
-        private void NoteText_MouseRightButtonDown(
-            object sender,
-            MouseButtonEventArgs e)
-        {
-            NoteContextMenu.PlacementTarget =
-                Note;
 
-            NoteContextMenu.IsOpen = true;
-
-            e.Handled = true;
-        }
-
-        private void FontFamily_Click(
-            object sender,
-            RoutedEventArgs e)
-        {
-            if (sender is not MenuItem item)
-                return;
-
-            string? name =
-                item.Header?.ToString();
-
-            if (string.IsNullOrWhiteSpace(name))
-                return;
-
-            FontFamily family =
-                new FontFamily(name);
-
-            currentFontFamily =
-                family;
-
-            if (HasSelection())
-            {
-                GetSelectedRange()
-                    .ApplyPropertyValue(
-                        TextElement.FontFamilyProperty,
-                        family);
-            }
-            else
-            {
-                NoteText.FontFamily =
-                    family;
-            }
-        }
-
-        private void FontSize_Click(
-            object sender,
-            RoutedEventArgs e)
-        {
-            if (sender is not MenuItem item)
-                return;
-
-            if (!double.TryParse(
-                    item.Tag?.ToString(),
-                    out double size))
-            {
-                return;
-            }
-
-            currentFontSize =
-                size;
-
-            if (HasSelection())
-            {
-                GetSelectedRange()
-                    .ApplyPropertyValue(
-                        TextElement.FontSizeProperty,
-                        size);
-            }
-            else
-            {
-                NoteText.FontSize =
-                    size;
-            }
-        }
-
-        private void Bold_Click(
-            object sender,
-            RoutedEventArgs e)
-        {
-            if (sender is not MenuItem item)
-                return;
-
-            FontWeight weight =
-                item.IsChecked
-                    ? FontWeights.Bold
-                    : FontWeights.Normal;
-
-            currentFontWeight =
-                weight;
-
-            ApplyProperty(
-                TextElement.FontWeightProperty,
-                weight);
-        }
-
-        private void Italic_Click(
-            object sender,
-            RoutedEventArgs e)
-        {
-            if (sender is not MenuItem item)
-                return;
-
-            FontStyle style =
-                item.IsChecked
-                    ? FontStyles.Italic
-                    : FontStyles.Normal;
-
-            currentFontStyle =
-                style;
-
-            ApplyProperty(
-                TextElement.FontStyleProperty,
-                style);
-        }
-
-        private void BoldItalic_Click(
-            object sender,
-            RoutedEventArgs e)
-        {
-            if (sender is not MenuItem item)
-                return;
-
-            if (item.IsChecked)
-            {
-                currentFontWeight =
-                    FontWeights.Bold;
-
-                currentFontStyle =
-                    FontStyles.Italic;
-
-                ApplyProperty(
-                    TextElement.FontWeightProperty,
-                    FontWeights.Bold);
-
-                ApplyProperty(
-                    TextElement.FontStyleProperty,
-                    FontStyles.Italic);
-            }
-            else
-            {
-                currentFontWeight =
-                    FontWeights.Normal;
-
-                currentFontStyle =
-                    FontStyles.Normal;
-
-                ApplyProperty(
-                    TextElement.FontWeightProperty,
-                    FontWeights.Normal);
-
-                ApplyProperty(
-                    TextElement.FontStyleProperty,
-                    FontStyles.Normal);
-            }
-        }
-
-        private void TextColor_Click(
-            object sender,
-            RoutedEventArgs e)
-        {
-            if (sender is not MenuItem item)
-                return;
-
-            string? value =
-                item.Tag?.ToString();
-
-            if (string.IsNullOrWhiteSpace(value))
-                return;
-
-            Color color =
-                (Color)ColorConverter
-                    .ConvertFromString(value);
-
-            SolidColorBrush brush =
-                new SolidColorBrush(color);
-
-            currentForeground =
-                brush;
-
-            ApplyProperty(
-                TextElement.ForegroundProperty,
-                brush);
-        }
-
-        private TextRange GetSelectedRange()
-        {
-            return new TextRange(
-                NoteText.Selection.Start,
-                NoteText.Selection.End);
-        }
-
-        private bool HasSelection()
-        {
-            return NoteText.Selection.Start.CompareTo(
-                       NoteText.Selection.End) != 0;
-        }
-
-        private void ApplyProperty(
-            DependencyProperty property,
-            object value)
-        {
-            if (HasSelection())
-            {
-                GetSelectedRange()
-                    .ApplyPropertyValue(
-                        property,
-                        value);
-            }
-            else
-            {
-                NoteText.Selection
-                    .ApplyPropertyValue(
-                        property,
-                        value);
-            }
-        }
+        // =========================================================
+        // ԱՆԿՅՈՒՆ
+        // =========================================================
 
         private static double GetAngle(
             Point point,
@@ -497,8 +703,10 @@ namespace DesktopNotes
             return Math.Atan2(
                        point.Y - center.Y,
                        point.X - center.X)
-                   * 180 / Math.PI;
+                   * 180 /
+                   Math.PI;
         }
+
 
         private static double NormalizeAngle(
             double angle)
@@ -510,6 +718,222 @@ namespace DesktopNotes
                 angle += 360;
 
             return angle;
+        }
+
+
+        // =========================================================
+        // ՏԱՌԱՏԵՍԱԿ
+        // =========================================================
+
+        private void FontArial_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            NoteText.FontFamily =
+                new FontFamily("Arial");
+
+            SaveCurrentNote();
+        }
+
+
+        private void FontTimes_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            NoteText.FontFamily =
+                new FontFamily("Times New Roman");
+
+            SaveCurrentNote();
+        }
+
+
+        private void FontCourier_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            NoteText.FontFamily =
+                new FontFamily("Courier New");
+
+            SaveCurrentNote();
+        }
+
+
+        // =========================================================
+        // ԿԵՏԱՉԱՓ
+        // =========================================================
+
+        private void FontSize14_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetFontSize(14);
+        }
+
+
+        private void FontSize16_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetFontSize(16);
+        }
+
+
+        private void FontSize18_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetFontSize(18);
+        }
+
+
+        private void FontSize20_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetFontSize(20);
+        }
+
+
+        private void FontSize24_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetFontSize(24);
+        }
+
+
+        private void FontSize28_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetFontSize(28);
+        }
+
+
+        private void SetFontSize(
+            double size)
+        {
+            TextRange range =
+                new TextRange(
+                    NoteText.Selection.Start,
+                    NoteText.Selection.End);
+
+            if (!range.IsEmpty)
+            {
+                range.ApplyPropertyValue(
+                    TextElement.FontSizeProperty,
+                    size);
+            }
+            else
+            {
+                NoteText.FontSize = size;
+            }
+
+            SaveCurrentText();
+        }
+
+
+        // =========================================================
+        // ԹԱՎ
+        // =========================================================
+
+        private void Bold_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            ApplyFontWeight(
+                FontWeights.Bold);
+        }
+
+
+        // =========================================================
+        // ՇԵՂ
+        // =========================================================
+
+        private void Italic_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            ApplyFontStyle(
+                FontStyles.Italic);
+        }
+
+
+        // =========================================================
+        // ԹԱՎ ՇԵՂ
+        // =========================================================
+
+        private void BoldItalic_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            ApplyFontWeight(
+                FontWeights.Bold);
+
+            ApplyFontStyle(
+                FontStyles.Italic);
+        }
+
+
+        // =========================================================
+        // ՍՈՎՈՐԱԿԱՆ
+        // =========================================================
+
+        private void Normal_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            ApplyFontWeight(
+                FontWeights.Normal);
+
+            ApplyFontStyle(
+                FontStyles.Normal);
+        }
+
+
+        private void ApplyFontWeight(
+            FontWeight weight)
+        {
+            TextRange range =
+                new TextRange(
+                    NoteText.Selection.Start,
+                    NoteText.Selection.End);
+
+            if (!range.IsEmpty)
+            {
+                range.ApplyPropertyValue(
+                    TextElement.FontWeightProperty,
+                    weight);
+            }
+            else
+            {
+                NoteText.FontWeight = weight;
+            }
+
+            SaveCurrentText();
+        }
+
+
+        private void ApplyFontStyle(
+            FontStyle style)
+        {
+            TextRange range =
+                new TextRange(
+                    NoteText.Selection.Start,
+                    NoteText.Selection.End);
+
+            if (!range.IsEmpty)
+            {
+                range.ApplyPropertyValue(
+                    TextElement.FontStyleProperty,
+                    style);
+            }
+            else
+            {
+                NoteText.FontStyle = style;
+            }
+
+            SaveCurrentText();
         }
     }
 }
