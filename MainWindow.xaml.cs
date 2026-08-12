@@ -30,7 +30,8 @@ namespace DesktopNotes
             public double Rotation { get; set; }
 
             public Brush Background { get; set; }
-                = new SolidColorBrush(Color.FromRgb(255, 245, 157));
+                = new SolidColorBrush(
+                    Color.FromRgb(255, 245, 157));
 
             public string FontFamily { get; set; }
                 = "Arial";
@@ -69,6 +70,18 @@ namespace DesktopNotes
 
 
         // =========================================================
+        // WINDOW-Ի ԵՐԿՐԱՉԱՓՈՒԹՅՈՒՆ
+        // =========================================================
+
+        // Թերթիկի շուրջ նվազագույն ազատ տարածությունը
+        // յուրաքանչյուր կողմում։
+        private const double WindowPadding = 10;
+
+        // Window-ի չափերը փոխվում են այս քայլերով։
+        private const double WindowStep = 20;
+
+
+        // =========================================================
         // CONSTRUCTOR
         // =========================================================
 
@@ -91,15 +104,21 @@ namespace DesktopNotes
             NoteData note = new NoteData
             {
                 Created = DateTime.Now,
+
                 Width = 300,
                 Height = 220,
+
                 Left = double.NaN,
                 Top = double.NaN,
+
                 Rotation = 0,
+
                 FontFamily = "Arial",
                 FontSize = 18,
+
                 FontWeight = FontWeights.Normal,
                 FontStyle = FontStyles.Normal,
+
                 Background =
                     new SolidColorBrush(
                         Color.FromRgb(255, 245, 157))
@@ -120,6 +139,8 @@ namespace DesktopNotes
             NoteText.Document.Blocks.Add(paragraph);
 
             SaveCurrentText();
+
+            UpdateWindowSizeForRotation(false);
         }
 
 
@@ -140,7 +161,6 @@ namespace DesktopNotes
             {
                 Created = DateTime.Now,
 
-                // Ժառանգում ենք տեսքը
                 Width = current.Width,
                 Height = current.Height,
 
@@ -153,10 +173,10 @@ namespace DesktopNotes
 
                 FontFamily = current.FontFamily,
                 FontSize = current.FontSize,
+
                 FontWeight = current.FontWeight,
                 FontStyle = current.FontStyle,
 
-                // Տեքստը նոր թերթիկում դատարկ է
                 TextRtf = ""
             };
 
@@ -406,15 +426,10 @@ namespace DesktopNotes
                     Visibility.Collapsed;
 
                 PreviousButton.Visibility =
-                    currentNoteIndex > 0
-                        ? Visibility.Collapsed
-                        : Visibility.Collapsed;
+                    Visibility.Collapsed;
 
                 NextButton.Visibility =
-                    currentNoteIndex <
-                    notes.Count - 1
-                        ? Visibility.Collapsed
-                        : Visibility.Collapsed;
+                    Visibility.Collapsed;
             }
         }
 
@@ -614,15 +629,18 @@ namespace DesktopNotes
         private void StartRotation(
             MouseButtonEventArgs e)
         {
+            // Մկնիկի դիրքը վերցնում ենք էկրանի կոորդինատներով։
             Point mouse =
-                e.GetPosition(MainGrid);
+                PointToScreen(
+                    e.GetPosition(MainGrid));
 
+            // Թերթիկի կենտրոնը նույնպես վերցնում ենք
+            // էկրանի կոորդինատներով։
             Point center =
-                Note.TranslatePoint(
+                Note.PointToScreen(
                     new Point(
                         Note.ActualWidth / 2,
-                        Note.ActualHeight / 2),
-                    MainGrid);
+                        Note.ActualHeight / 2));
 
             rotationStartAngle =
                 GetAngle(
@@ -647,15 +665,17 @@ namespace DesktopNotes
             if (!isRotating)
                 return;
 
+            // Մկնիկը եւ կենտրոնը երկուսն էլ
+            // նույն՝ էկրանի կոորդինատային համակարգում են։
             Point mouse =
-                e.GetPosition(MainGrid);
+                PointToScreen(
+                    e.GetPosition(MainGrid));
 
             Point center =
-                Note.TranslatePoint(
+                Note.PointToScreen(
                     new Point(
                         Note.ActualWidth / 2,
-                        Note.ActualHeight / 2),
-                    MainGrid);
+                        Note.ActualHeight / 2));
 
             double currentAngle =
                 GetAngle(
@@ -667,9 +687,16 @@ namespace DesktopNotes
                     currentAngle -
                     rotationStartAngle);
 
-            NoteRotation.Angle =
+            double newAngle =
                 noteStartAngle +
                 difference;
+
+            NoteRotation.Angle =
+                newAngle;
+
+            // Անհրաժեշտության դեպքում մեծացնում ենք Window-ը։
+            // Փոքրացում չենք կատարում։
+            UpdateWindowSizeForRotation(true);
 
             e.Handled = true;
         }
@@ -689,6 +716,136 @@ namespace DesktopNotes
             SaveCurrentNote();
 
             e.Handled = true;
+        }
+
+
+        // =========================================================
+        // WINDOW-Ի ՉԱՓԸ՝ ՊՏՏՎԱԾ ԹԵՐԹԻԿԻ ՀԱՄԱՐ
+        // =========================================================
+
+        private void UpdateWindowSizeForRotation(
+            bool keepCenter)
+        {
+            if (Note.ActualWidth <= 0 ||
+                Note.ActualHeight <= 0)
+            {
+                return;
+            }
+
+            double angle =
+                NoteRotation.Angle;
+
+            double radians =
+                angle * Math.PI / 180.0;
+
+            double cos =
+                Math.Abs(
+                    Math.Cos(radians));
+
+            double sin =
+                Math.Abs(
+                    Math.Sin(radians));
+
+            // Պտտված ուղղանկյան bounding box-ը։
+            double rotatedWidth =
+                Note.ActualWidth * cos +
+                Note.ActualHeight * sin;
+
+            double rotatedHeight =
+                Note.ActualWidth * sin +
+                Note.ActualHeight * cos;
+
+            // 10 px պահուստ յուրաքանչյուր կողմում։
+            double requiredWidth =
+                rotatedWidth +
+                WindowPadding * 2;
+
+            double requiredHeight =
+                rotatedHeight +
+                WindowPadding * 2;
+
+            // Window-ի չափերը կլորացնում ենք 20 px քայլերի։
+            double newWidth =
+                RoundUpToStep(
+                    requiredWidth,
+                    WindowStep);
+
+            double newHeight =
+                RoundUpToStep(
+                    requiredHeight,
+                    WindowStep);
+
+            // Window-ը փոքրացնել չենք անում։
+            if (newWidth <= Width &&
+                newHeight <= Height)
+            {
+                return;
+            }
+
+            // Պահում ենք թերթիկի կենտրոնի էկրանի
+            // կոորդինատը՝ մինչեւ Window-ի չափափոխումը։
+            Point centerOnScreen =
+                Note.PointToScreen(
+                    new Point(
+                        Note.ActualWidth / 2,
+                        Note.ActualHeight / 2));
+
+            double oldWidth =
+                Width;
+
+            double oldHeight =
+                Height;
+
+            Width =
+                Math.Max(
+                    Width,
+                    newWidth);
+
+            Height =
+                Math.Max(
+                    Height,
+                    newHeight);
+
+            if (keepCenter)
+            {
+                // Window-ի չափի փոփոխությունից հետո
+                // կենտրոնը վերադարձնում ենք նույն
+                // էկրանի կետին։
+                Left =
+                    centerOnScreen.X -
+                    Width / 2;
+
+                Top =
+                    centerOnScreen.Y -
+                    Height / 2;
+            }
+            else
+            {
+                // Սովորական սկզբնական վիճակ։
+                if (!double.IsNaN(Left))
+                {
+                    Left =
+                        centerOnScreen.X -
+                        Width / 2;
+                }
+
+                if (!double.IsNaN(Top))
+                {
+                    Top =
+                        centerOnScreen.Y -
+                        Height / 2;
+                }
+            }
+        }
+
+
+        private static double RoundUpToStep(
+            double value,
+            double step)
+        {
+            return Math.Ceiling(
+                       value / step)
+                   * step;
         }
 
 
@@ -729,10 +886,8 @@ namespace DesktopNotes
             object sender,
             RoutedEventArgs e)
         {
-            NoteText.FontFamily =
-                new FontFamily("Arial");
-
-            SaveCurrentNote();
+            ApplyFontFamily(
+                "Arial");
         }
 
 
@@ -740,10 +895,8 @@ namespace DesktopNotes
             object sender,
             RoutedEventArgs e)
         {
-            NoteText.FontFamily =
-                new FontFamily("Times New Roman");
-
-            SaveCurrentNote();
+            ApplyFontFamily(
+                "Times New Roman");
         }
 
 
@@ -751,8 +904,32 @@ namespace DesktopNotes
             object sender,
             RoutedEventArgs e)
         {
-            NoteText.FontFamily =
-                new FontFamily("Courier New");
+            ApplyFontFamily(
+                "Courier New");
+        }
+
+
+        private void ApplyFontFamily(
+            string fontName)
+        {
+            TextRange range =
+                new TextRange(
+                    NoteText.Selection.Start,
+                    NoteText.Selection.End);
+
+            if (!range.IsEmpty)
+            {
+                range.ApplyPropertyValue(
+                    TextElement.FontFamilyProperty,
+                    new FontFamily(fontName));
+            }
+            else
+            {
+                NoteText.FontFamily =
+                    new FontFamily(fontName);
+            }
+
+            SaveCurrentText();
 
             SaveCurrentNote();
         }
@@ -907,7 +1084,8 @@ namespace DesktopNotes
             }
             else
             {
-                NoteText.FontWeight = weight;
+                NoteText.FontWeight =
+                    weight;
             }
 
             SaveCurrentText();
@@ -930,7 +1108,93 @@ namespace DesktopNotes
             }
             else
             {
-                NoteText.FontStyle = style;
+                NoteText.FontStyle =
+                    style;
+            }
+
+            SaveCurrentText();
+        }
+
+
+        // =========================================================
+        // ՏԵՔՍՏԻ ԳՈՒՅՆ
+        // =========================================================
+
+        private void TextBlack_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetTextColor(
+                Color.FromRgb(0, 0, 0));
+        }
+
+
+        private void TextDarkGray_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetTextColor(
+                Color.FromRgb(70, 70, 70));
+        }
+
+
+        private void TextRed_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetTextColor(
+                Color.FromRgb(180, 0, 0));
+        }
+
+
+        private void TextBlue_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetTextColor(
+                Color.FromRgb(0, 70, 180));
+        }
+
+
+        private void TextGreen_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetTextColor(
+                Color.FromRgb(0, 120, 60));
+        }
+
+
+        private void TextBrown_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetTextColor(
+                Color.FromRgb(120, 70, 30));
+        }
+
+
+        private void SetTextColor(
+            Color color)
+        {
+            SolidColorBrush brush =
+                new SolidColorBrush(color);
+
+            TextRange range =
+                new TextRange(
+                    NoteText.Selection.Start,
+                    NoteText.Selection.End);
+
+            if (!range.IsEmpty)
+            {
+                range.ApplyPropertyValue(
+                    TextElement.ForegroundProperty,
+                    brush);
+            }
+            else
+            {
+                NoteText.Foreground =
+                    brush;
             }
 
             SaveCurrentText();
