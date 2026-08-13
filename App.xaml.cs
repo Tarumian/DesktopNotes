@@ -1,13 +1,13 @@
-﻿using System.Configuration;
-using System.Data;
-using System.Windows;
+﻿using System.Windows;
 
 namespace DesktopNotes;
 
-/// <summary>
-/// Interaction logic for App.xaml
-/// </summary>
 public partial class App : Application
 {
-}
+    // =========================================================
+    // DESKTOPNOTES-Ի ԿԵՆՏՐՈՆԱԿԱՆ ՏՎՅԱԼՆԵՐԻ ՊԱՀՈՑ
+    // =========================================================
 
+    public NoteStore Store { get; } =
+        new NoteStore();
+}

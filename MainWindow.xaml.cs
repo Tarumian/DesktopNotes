@@ -6,13 +6,16 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 
+
 namespace DesktopNotes
 {
     public partial class MainWindow : Window
-    {
-        // =========================================================
-        // WINDOW-Ի ԵՐԿՐԱՉԱՓՈՒԹՅՈՒՆ
-        // =========================================================
+{
+    private NoteData Data;
+
+    // =========================================================
+    // WINDOW-Ի ԵՐԿՐԱՉԱՓՈՒԹՅՈՒՆ
+    // =========================================================
 
         private const double WindowPadding = 10;
         private const double WindowStep = 20;
@@ -49,6 +52,10 @@ namespace DesktopNotes
         {
             InitializeComponent();
 
+            Data = new NoteData();
+
+            ((App)Application.Current).Store.Notes[Data.Id] = Data;
+
             Note.Width = 300;
             Note.Height = 220;
 
@@ -75,8 +82,75 @@ namespace DesktopNotes
 
             NoteText.Document.Blocks.Add(paragraph);
 
+            // -----------------------------------------------------
+            // Այս Window-ը taskbar-ի միակ ներկայացուցիչն է։
+            // -----------------------------------------------------
+
+            ShowInTaskbar = true;
+
             Loaded += MainWindow_Loaded;
         }
+
+
+        // =========================================================
+// NOTE DATA — WINDOW-Ի ԸՆԹԱՑԻԿ ՎԻՃԱԿԸ
+// =========================================================
+
+private void UpdateDataFromWindow()
+{
+    Data.Width = Note.Width;
+    Data.Height = Note.Height;
+
+    Data.Left = Left;
+    Data.Top = Top;
+
+    Data.Rotation = NoteRotation.Angle;
+
+    Data.NoteColor =
+        (Note.Background as SolidColorBrush)?.Color.ToString()
+        ?? "#FFF9A6";
+
+    Data.FontFamily =
+        NoteText.FontFamily.Source;
+
+    Data.FontSize =
+        NoteText.FontSize;
+
+    Data.IsBold =
+        NoteText.FontWeight == FontWeights.Bold;
+
+    Data.IsItalic =
+        NoteText.FontStyle == FontStyles.Italic;
+
+    Data.TextColor =
+        (NoteText.Foreground as SolidColorBrush)?.Color.ToString()
+        ?? "#000000";
+
+    TextRange range =
+        new TextRange(
+            NoteText.Document.ContentStart,
+            NoteText.Document.ContentEnd);
+
+    Data.Text =
+        range.Text.TrimEnd('\r', '\n');
+
+    using (var stream =
+           new MemoryStream())
+    {
+        range.Save(
+            stream,
+            DataFormats.Rtf);
+
+        stream.Position = 0;
+
+        using (var reader =
+               new StreamReader(stream))
+        {
+            Data.RtfContent =
+                reader.ReadToEnd();
+        }
+    }
+}
 
 
         // =========================================================
@@ -118,6 +192,13 @@ namespace DesktopNotes
 
             MainWindow newNote =
                 new MainWindow();
+
+
+            // -----------------------------------------------------
+            // Նոր թերթիկը առանձին taskbar կոճակ ՉՈՒՆԻ։
+            // -----------------------------------------------------
+
+            newNote.ShowInTaskbar = false;
 
 
             // -----------------------------------------------------
@@ -171,7 +252,7 @@ namespace DesktopNotes
 
             // -----------------------------------------------------
             // Նոր Window-ի թերթիկի կենտրոնը
-            // դնում ենք հին թերթիկի կենտրոնի վրա։
+            // դնում ենք հնի կենտրոնի վրա։
             // -----------------------------------------------------
 
             newNote.Left =
@@ -311,15 +392,6 @@ namespace DesktopNotes
             object sender,
             MouseButtonEventArgs e)
         {
-            // -----------------------------------------------------
-            // Այժմ DragMove() չենք օգտագործում։
-            //
-            // Դա թույլ չէր տալիս Window-ին անցնել էկրանի
-            // վերեւի սահմանով։
-            //
-            // Փոխարենը Window-ը տեղափոխում ենք ձեռքով։
-            // -----------------------------------------------------
-
             Point mouseScreen =
                 PointToScreen(
                     e.GetPosition(MoveArea));
@@ -364,9 +436,8 @@ namespace DesktopNotes
                 moveStartMouseScreen.Y;
 
             // -----------------------------------------------------
-            // Այստեղ հատուկ սահմանափակում ՉԿԱ։
-            //
-            // Այսպիսով Top-ը կարող է լինել բացասական։
+            // ՍԱ ԴԻՏԱՎՈՐՅԱԼ ՉԵՆՔ ՓՈԽՈՒՄ։
+            // Top-ը կարող է լինել բացասական։
             // -----------------------------------------------------
 
             Left =
@@ -392,6 +463,9 @@ namespace DesktopNotes
 
             if (MoveArea.IsMouseCaptured)
                 MoveArea.ReleaseMouseCapture();
+
+            UpdateDataFromWindow();
+
         }
 
 
@@ -488,7 +562,7 @@ namespace DesktopNotes
             MouseEventArgs e)
         {
             // -----------------------------------------------------
-            // Նախ ստուգում ենք տեղափոխումը։
+            // Նախ՝ տեղափոխում։
             // -----------------------------------------------------
 
             if (isMoving)
@@ -502,7 +576,7 @@ namespace DesktopNotes
 
 
             // -----------------------------------------------------
-            // Հետո՝ պտտումը։
+            // Հետո՝ պտտում։
             // -----------------------------------------------------
 
             if (!isRotating)
@@ -564,6 +638,8 @@ namespace DesktopNotes
             isRotating = false;
 
             Note.ReleaseMouseCapture();
+
+            UpdateDataFromWindow();
 
             e.Handled = true;
         }

@@ -166,23 +166,51 @@
                 <!-- ================================================= -->
 
                 <Button x:Name="CloseButton"
-                        Content="×"
-                        Width="25"
-                        Height="25"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Top"
-                        Margin="0,-8,-5,0"
-                        FontSize="18"
-                        FontWeight="Bold"
-                        Foreground="#555555"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Visibility="Collapsed"
-                        IsHitTestVisible="True"
-                        MouseEnter="CloseButton_MouseEnter"
-                        MouseLeave="CloseButton_MouseLeave"
-                        Click="CloseButton_Click"
-                        ToolTip="Փակել թերթիկը"/>
+        Content="×"
+        Width="25"
+        Height="25"
+        HorizontalAlignment="Right"
+        VerticalAlignment="Top"
+        Margin="0,-8,-5,0"
+        FontSize="18"        
+        Foreground="#555555"
+        Background="Transparent"
+        BorderThickness="0"
+        Padding="0"
+        FocusVisualStyle="{x:Null}"
+        Visibility="Collapsed"
+        IsHitTestVisible="True"
+        MouseEnter="CloseButton_MouseEnter"
+        MouseLeave="CloseButton_MouseLeave"
+        Click="CloseButton_Click"
+        ToolTip="Փակել թերթիկը">
+
+    <Button.Template>
+        <ControlTemplate TargetType="Button">
+            <ContentPresenter
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"/>
+        </ControlTemplate>
+    </Button.Template>
+
+    <Button.Style>
+        <Style TargetType="Button">
+            <Setter Property="Foreground"
+                    Value="#555555"/>
+
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver"
+                         Value="True">
+                    <Setter Property="Foreground"
+                            Value="Black"/>
+                    <Setter Property="FontWeight"
+                            Value="ExtraBold"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Button.Style>
+
+</Button>
 
             </Grid>
 
