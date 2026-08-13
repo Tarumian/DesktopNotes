@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\post\\OneDrive\\Desktop\\DesktopNotes\\DesktopNotes.csproj": {}
+    "D:\\Tarumian\\DesktopNotes\\DesktopNotes.csproj": {}
   },
   "projects": {
-    "C:\\Users\\post\\OneDrive\\Desktop\\DesktopNotes\\DesktopNotes.csproj": {
+    "D:\\Tarumian\\DesktopNotes\\DesktopNotes.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\post\\OneDrive\\Desktop\\DesktopNotes\\DesktopNotes.csproj",
+        "projectUniqueName": "D:\\Tarumian\\DesktopNotes\\DesktopNotes.csproj",
         "projectName": "DesktopNotes",
-        "projectPath": "C:\\Users\\post\\OneDrive\\Desktop\\DesktopNotes\\DesktopNotes.csproj",
+        "projectPath": "D:\\Tarumian\\DesktopNotes\\DesktopNotes.csproj",
         "packagesPath": "C:\\Users\\post\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\post\\OneDrive\\Desktop\\DesktopNotes\\obj\\",
+        "outputPath": "D:\\Tarumian\\DesktopNotes\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\post\\AppData\\Roaming\\NuGet\\NuGet.Config"

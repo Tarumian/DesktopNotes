@@ -31,6 +31,17 @@ namespace DesktopNotes
 
 
         // =========================================================
+        // ՏԵՂԱՓՈԽՈՒՄ
+        // =========================================================
+
+        private bool isMoving = false;
+
+        private Point moveStartMouseScreen;
+        private double moveStartLeft;
+        private double moveStartTop;
+
+
+        // =========================================================
         // CONSTRUCTOR
         // =========================================================
 
@@ -91,8 +102,7 @@ namespace DesktopNotes
             RoutedEventArgs e)
         {
             // -----------------------------------------------------
-            // Նախ պահում ենք ընթացիկ թերթիկի կենտրոնը
-            // էկրանի կոորդինատներով։
+            // Ընթացիկ թերթիկի կենտրոնը՝ էկրանի կոորդինատներով։
             // -----------------------------------------------------
 
             Point centerOnScreen =
@@ -153,7 +163,7 @@ namespace DesktopNotes
 
 
             // -----------------------------------------------------
-            // Window-ը նախ չափափոխենք նոր թերթիկի համար։
+            // Window-ը չափափոխում ենք նոր թերթիկի համար։
             // -----------------------------------------------------
 
             newNote.UpdateWindowSizeForRotation(false);
@@ -203,6 +213,7 @@ namespace DesktopNotes
             MouseEventArgs e)
         {
             if (!isRotating &&
+                !isMoving &&
                 !CloseButton.IsMouseOver)
             {
                 CloseButton.Visibility =
@@ -293,22 +304,94 @@ namespace DesktopNotes
 
 
         // =========================================================
-        // MOVE
+        // MOVE START
         // =========================================================
 
         private void MoveArea_MouseLeftButtonDown(
             object sender,
             MouseButtonEventArgs e)
         {
-            e.Handled = true;
+            // -----------------------------------------------------
+            // Այժմ DragMove() չենք օգտագործում։
+            //
+            // Դա թույլ չէր տալիս Window-ին անցնել էկրանի
+            // վերեւի սահմանով։
+            //
+            // Փոխարենը Window-ը տեղափոխում ենք ձեռքով։
+            // -----------------------------------------------------
 
-            try
-            {
-                DragMove();
-            }
-            catch
-            {
-            }
+            Point mouseScreen =
+                PointToScreen(
+                    e.GetPosition(MoveArea));
+
+            moveStartMouseScreen =
+                mouseScreen;
+
+            moveStartLeft =
+                Left;
+
+            moveStartTop =
+                Top;
+
+            isMoving = true;
+
+            MoveArea.CaptureMouse();
+
+            e.Handled = true;
+        }
+
+
+        // =========================================================
+        // MOVE
+        // =========================================================
+
+        private void MoveNote(
+            MouseEventArgs e)
+        {
+            if (!isMoving)
+                return;
+
+            Point mouseScreen =
+                PointToScreen(
+                    e.GetPosition(MoveArea));
+
+            double deltaX =
+                mouseScreen.X -
+                moveStartMouseScreen.X;
+
+            double deltaY =
+                mouseScreen.Y -
+                moveStartMouseScreen.Y;
+
+            // -----------------------------------------------------
+            // Այստեղ հատուկ սահմանափակում ՉԿԱ։
+            //
+            // Այսպիսով Top-ը կարող է լինել բացասական։
+            // -----------------------------------------------------
+
+            Left =
+                moveStartLeft +
+                deltaX;
+
+            Top =
+                moveStartTop +
+                deltaY;
+        }
+
+
+        // =========================================================
+        // MOVE END
+        // =========================================================
+
+        private void MoveNoteEnd()
+        {
+            if (!isMoving)
+                return;
+
+            isMoving = false;
+
+            if (MoveArea.IsMouseCaptured)
+                MoveArea.ReleaseMouseCapture();
         }
 
 
@@ -397,46 +480,31 @@ namespace DesktopNotes
 
 
         // =========================================================
-        // ROTATION START
-        // =========================================================
-
-        private void StartRotation(
-            MouseButtonEventArgs e)
-        {
-            Point mouse =
-                PointToScreen(
-                    e.GetPosition(MainGrid));
-
-            Point center =
-                Note.PointToScreen(
-                    new Point(
-                        Note.ActualWidth / 2,
-                        Note.ActualHeight / 2));
-
-            rotationStartAngle =
-                GetAngle(
-                    mouse,
-                    center);
-
-            noteStartAngle =
-                NoteRotation.Angle;
-
-            isRotating = true;
-
-            Note.CaptureMouse();
-
-            e.Handled = true;
-        }
-
-
-        // =========================================================
-        // ROTATION MOVE
+        // MOUSE MOVE
         // =========================================================
 
         private void Note_MouseMove(
             object sender,
             MouseEventArgs e)
         {
+            // -----------------------------------------------------
+            // Նախ ստուգում ենք տեղափոխումը։
+            // -----------------------------------------------------
+
+            if (isMoving)
+            {
+                MoveNote(e);
+
+                e.Handled = true;
+
+                return;
+            }
+
+
+            // -----------------------------------------------------
+            // Հետո՝ պտտումը։
+            // -----------------------------------------------------
+
             if (!isRotating)
                 return;
 
@@ -474,19 +542,61 @@ namespace DesktopNotes
 
 
         // =========================================================
-        // ROTATION END
+        // MOVE / ROTATION END
         // =========================================================
 
         private void Note_MouseLeftButtonUp(
             object sender,
             MouseButtonEventArgs e)
         {
+            if (isMoving)
+            {
+                MoveNoteEnd();
+
+                e.Handled = true;
+
+                return;
+            }
+
             if (!isRotating)
                 return;
 
             isRotating = false;
 
             Note.ReleaseMouseCapture();
+
+            e.Handled = true;
+        }
+
+
+        // =========================================================
+        // ROTATION START
+        // =========================================================
+
+        private void StartRotation(
+            MouseButtonEventArgs e)
+        {
+            Point mouse =
+                PointToScreen(
+                    e.GetPosition(MainGrid));
+
+            Point center =
+                Note.PointToScreen(
+                    new Point(
+                        Note.ActualWidth / 2,
+                        Note.ActualHeight / 2));
+
+            rotationStartAngle =
+                GetAngle(
+                    mouse,
+                    center);
+
+            noteStartAngle =
+                NoteRotation.Angle;
+
+            isRotating = true;
+
+            Note.CaptureMouse();
 
             e.Handled = true;
         }
