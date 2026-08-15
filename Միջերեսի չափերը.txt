@@ -1,0 +1,114 @@
+միջերեսի հիմնական չափերի «քարտեզը»
+
+Սա շատ լավ գաղափար է։ Հետագայում կարող եք հենց այս տեղերում արժեքները փոխել՝ առանց ամբողջ կոդը փնտրելու։
+
+MainWindow.xaml
+Ինչն է	Որտեղ	Ներկայիս արժեք
+Թերթիկի նախնական լայնությունը	Note Width	300
+Թերթիկի նախնական բարձրությունը	Note Height	220
+Վերին տեղափոխման գոտին	MoveArea Height	12
+Ձեւավորման hover գոտին	HoverArea Height	18
+Ձեւավորման գոտու վերեւի դիրքը	HoverArea Margin	0,12,0,0
+Տեքստի ձախ եզրը	NoteText Margin	18
+Տեքստի վերեւի եզրը	NoteText Margin	36
+Տեքստի աջ եզրը	NoteText Margin	18
+Տեքստի ներքեւի եզրը	NoteText Margin	12
+Տեքստի սկզբնական տառաչափը	FontSize	18
++ / − կոճակի լայնությունը	Width	25
++ / − կոճակի բարձրությունը	Height	25
++ / − տառաչափը	FontSize	18
++ / − ուղղահայաց դիրքը	Margin	0,-7,0,0
+Փակման կոճակի լայնությունը	CloseButton Width	25
+Փակման կոճակի բարձրությունը	CloseButton Height	25
+Փակման նշանի տառաչափը	CloseButton FontSize	18
+Փակման կոճակի դիրքը	CloseButton Margin	0,-8,-5,0
+MainWindow.xaml.cs
+
+Սրանք արդեն երկրաչափության հետ կապված հաստատուններ են.
+
+private const double WindowPadding = 10;
+private const double WindowStep = 20;
+private const double CenterRadius = 15;
+Ինչն է	Հաստատուն	Արժեք
+Պտտված թերթիկի շուրջ պահվող եզր	WindowPadding	10
+Պտտման ժամանակ չափի կլորացման քայլ	WindowStep	20
+Կենտրոնական չպտտվող շրջան	CenterRadius	15
+Նախադրված թերթիկների չափերը
+
+Դրանք ContextMenu-ում են.
+
+<MenuItem Header="150 × 220"/>
+<MenuItem Header="300 × 220"/>
+<MenuItem Header="150 × 450"/>
+
+Հետագայում այստեղ կարող ենք ավելացնել նոր չափեր, օրինակ՝
+
+400 × 300
+450 × 300
+200 × 450
+
+եւ դրանք միացնել ընդհանուր չափի համակարգին։
+
+
+
+
+
+Ու մի բան էլ․ որտե՞ղ են դրված լռելյայն տվյալները՝ տառատեսակի, դրա չափի, ոճի եւ այլն։
+
+Այո։ Դրանք հիմա հիմնականում երկու տեղում են՝ MainWindow.xaml-ում եւ MainWindow.xaml.cs-ում։
+
+1. Տեքստի սկզբնական տառատեսակը եւ չափը
+
+MainWindow.xaml-ում, NoteText-ի մեջ.
+
+<RichTextBox x:Name="NoteText"
+             ...
+             FontFamily="Arial"
+             FontSize="18"
+             Foreground="#222222"
+             ...
+
+Այսինքն՝
+
+Տառատեսակ → FontFamily="Arial"
+Տառաչափ → FontSize="18"
+Տեքստի գույն → Foreground="#222222"
+2. Սկզբնական ոճը
+
+MainWindow.xaml.cs-ի constructor-ում ունենք.
+
+NoteText.FontWeight =
+    FontWeights.Normal;
+
+
+NoteText.FontStyle =
+    FontStyles.Normal;
+
+Այսինքն՝ սկզբնական վիճակը.
+
+Թավ → ոչ
+Շեղ → ոչ
+
+Նույն constructor-ում նաեւ կա.
+
+NoteText.FontFamily =
+    new FontFamily("Arial");
+
+
+NoteText.FontSize = 18;
+
+Այսինքն՝ փաստորեն նույն սկզբնական տվյալները կրկնվում են երկու տեղում։
+
+3. Թերթիկի սկզբնական չափը
+
+MainWindow.xaml.cs-ում.
+
+Note.Width = 300;
+Note.Height = 220;
+
+Իսկ XAML-ում նույնպես կա.
+
+Width="300"
+Height="220"
+
+Այսինքն այստեղ եւս ունենք կրկնություն։

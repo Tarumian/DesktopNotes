@@ -75,7 +75,18 @@
                               Click="TextBrown_Click"/>
                 </MenuItem>
 
+                <MenuItem Header="Չափ">
+                    <MenuItem Header="150 × 220"
+                              Click="Size150x220_Click"/>
+                    <MenuItem Header="300 × 220"/>
+                    <MenuItem Header="150 × 450"/>
+                </MenuItem>
+
                 <Separator/>
+
+                <MenuItem Header="Հետարկել ջնջումը"
+          Click="UndoDelete_Click"
+          IsEnabled="False"/>
 
                 <MenuItem Header="Փակել"
                           Click="CloseMenu_Click"/>
@@ -125,16 +136,152 @@
             <Grid>
 
                 <!-- ================================================= -->
-                <!-- ՎԵՐԵՒԻ ՏԵՂԱՓՈԽՄԱՆ ԳՈՏԻ -->
+                <!-- ՎԵՐԵՒԻ ՀԻՄՆԱԿԱՆ ԳՈՏԻ -->
                 <!-- ================================================= -->
 
-                <Border x:Name="MoveArea"
+                <Grid Height="12"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Top">
+
+                    <!-- Տեղափոխման գոտի -->
+
+                    <Border x:Name="MoveArea"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Background="Transparent"
+                            Cursor="SizeAll"
+                            MouseLeftButtonDown="MoveArea_MouseLeftButtonDown"/>
+
+
+                    <!-- + եւ − -->
+
+                    <StackPanel x:Name="EditButtons"
+            Orientation="Horizontal"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            Margin="0,-7,0,0"
+            Visibility="Collapsed">
+
+    <!-- + Նոր թերթիկ -->
+
+    <Button x:Name="NewButton"
+            Content="+"
+            Width="25"
+            Height="25"
+            FontSize="18"
+            Foreground="#555555"
+            Background="Transparent"
+            BorderThickness="0"
+            Padding="0"
+            FocusVisualStyle="{x:Null}"
+            Click="NewNote_Click">
+
+        <Button.Template>
+            <ControlTemplate TargetType="Button">
+                <ContentPresenter
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"/>
+            </ControlTemplate>
+        </Button.Template>
+
+        <Button.Style>
+            <Style TargetType="Button">
+
+                <Setter Property="Foreground"
+                        Value="#555555"/>
+
+                <Setter Property="FontWeight"
+                        Value="Normal"/>
+
+                <Style.Triggers>
+
+                    <Trigger Property="IsMouseOver"
+                             Value="True">
+
+                        <Setter Property="Foreground"
+                                Value="Black"/>
+
+                        <Setter Property="FontWeight"
+                                Value="ExtraBold"/>
+
+                    </Trigger>
+
+                </Style.Triggers>
+
+            </Style>
+        </Button.Style>
+
+    </Button>
+
+
+    <!-- − Ջնջել -->
+
+    <Button x:Name="DeleteButton"
+        Content="−"
+        Width="25"
+        Height="25"
+        Margin="-7,0,0,0"
+        FontSize="18"
+        Foreground="#555555"
+        Background="Transparent"
+        BorderThickness="0"
+        Padding="0"
+        FocusVisualStyle="{x:Null}"
+        IsEnabled="True"
+        Click="DeleteButton_Click">
+
+        <Button.Template>
+            <ControlTemplate TargetType="Button">
+                <ContentPresenter
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"/>
+            </ControlTemplate>
+        </Button.Template>
+
+        <Button.Style>
+            <Style TargetType="Button">
+
+                <Setter Property="Foreground"
+                        Value="#555555"/>
+
+                <Setter Property="FontWeight"
+                        Value="Normal"/>
+
+                <Style.Triggers>
+
+                    <Trigger Property="IsMouseOver"
+                             Value="True">
+
+                        <Setter Property="Foreground"
+                                Value="Black"/>
+
+                        <Setter Property="FontWeight"
+                                Value="ExtraBold"/>
+
+                    </Trigger>
+
+                </Style.Triggers>
+
+            </Style>
+        </Button.Style>
+
+    </Button>
+
+</StackPanel>
+
+                </Grid>
+
+
+                <!-- ================================================= -->
+                <!-- ԵՐԿՐՈՐԴ ՀՈՒՎԵՐԱՅԻՆ ԳՈՏԻ -->
+                <!-- ================================================= -->
+
+                <Border x:Name="HoverArea"
                         Height="18"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Top"
-                        Background="Transparent"
-                        Cursor="SizeAll"
-                        MouseLeftButtonDown="MoveArea_MouseLeftButtonDown"/>
+                        Margin="0,12,0,0"
+                        Background="Transparent"/>
 
 
                 <!-- ================================================= -->
@@ -142,13 +289,11 @@
                 <!-- ================================================= -->
 
                 <RichTextBox x:Name="NoteText"
-                             Width="250"
-                             Height="150"
-                             HorizontalAlignment="Left"
-                             VerticalAlignment="Top"
-                             Margin="18,36,0,0"
-                             FontFamily="Arial"
-                             FontSize="18"
+                             HorizontalAlignment="Stretch"
+                             VerticalAlignment="Stretch"
+                             Margin="12,36,12,12"
+                             FontFamily="Comic Sans MS"
+                             FontSize="14"
                              Foreground="#222222"
                              Background="Transparent"
                              BorderThickness="0"
@@ -166,55 +311,63 @@
                 <!-- ================================================= -->
 
                 <Button x:Name="CloseButton"
-        Content="×"
-        Width="25"
-        Height="25"
-        HorizontalAlignment="Right"
-        VerticalAlignment="Top"
-        Margin="0,-8,-5,0"
-        FontSize="18"        
-        Foreground="#555555"
-        Background="Transparent"
-        BorderThickness="0"
-        Padding="0"
-        FocusVisualStyle="{x:Null}"
-        Visibility="Collapsed"
-        IsHitTestVisible="True"
-        MouseEnter="CloseButton_MouseEnter"
-        MouseLeave="CloseButton_MouseLeave"
-        Click="CloseButton_Click"
-        ToolTip="Փակել թերթիկը">
+                        Content="×"
+                        Width="25"
+                        Height="25"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Margin="0,-8,-5,0"
+                        FontSize="18"
+                        Foreground="#555555"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        FocusVisualStyle="{x:Null}"
+                        Visibility="Collapsed"
+                        IsHitTestVisible="True"
+                        MouseEnter="CloseButton_MouseEnter"
+                        MouseLeave="CloseButton_MouseLeave"
+                        Click="CloseButton_Click"
+                        ToolTip="Փակել թերթիկը">
 
-    <Button.Template>
-        <ControlTemplate TargetType="Button">
-            <ContentPresenter
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"/>
-        </ControlTemplate>
-    </Button.Template>
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <ContentPresenter
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"/>
+                        </ControlTemplate>
+                    </Button.Template>
 
-    <Button.Style>
-        <Style TargetType="Button">
-            <Setter Property="Foreground"
-                    Value="#555555"/>
+                    <Button.Style>
+                        <Style TargetType="Button">
 
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver"
-                         Value="True">
-                    <Setter Property="Foreground"
-                            Value="Black"/>
-                    <Setter Property="FontWeight"
-                            Value="ExtraBold"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-    </Button.Style>
+                            <Setter Property="Foreground"
+                                    Value="#555555"/>
 
-</Button>
+                            <Style.Triggers>
+
+                                <Trigger Property="IsMouseOver"
+                                         Value="True">
+
+                                    <Setter Property="Foreground"
+                                            Value="Black"/>
+
+                                    <Setter Property="FontWeight"
+                                            Value="ExtraBold"/>
+
+                                </Trigger>
+
+                            </Style.Triggers>
+
+                        </Style>
+                    </Button.Style>
+
+                </Button>
 
             </Grid>
 
         </Border>
 
     </Grid>
+
 </Window>

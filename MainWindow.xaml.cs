@@ -56,15 +56,18 @@ namespace DesktopNotes
 
             ((App)Application.Current).Store.Notes[Data.Id] = Data;
 
-            Note.Width = 300;
-            Note.Height = 220;
+            Note.Width =
+    ((App)Application.Current).Store.NoteWidth;
+
+Note.Height =
+    ((App)Application.Current).Store.NoteHeight;
 
             NoteRotation.Angle = 0;
 
             NoteText.FontFamily =
-                new FontFamily("Arial");
+                new FontFamily("Comic Sans MS");
 
-            NoteText.FontSize = 18;
+            NoteText.FontSize = 14;
 
             NoteText.FontWeight =
                 FontWeights.Normal;
@@ -152,6 +155,50 @@ private void UpdateDataFromWindow()
     }
 }
 
+// =========================================================
+// ԹԵՐԹԻԿՆԵՐԻ ԸՆԴՀԱՆՈՒՐ ՉԱՓ
+// =========================================================
+
+private void ApplyNoteSize(
+    double width,
+    double height)
+{
+    // -----------------------------------------------------
+    // Պահում ենք նոր ընդհանուր չափը
+    // -----------------------------------------------------
+
+    NoteStore store =
+        ((App)Application.Current).Store;
+
+    store.NoteWidth = width;
+    store.NoteHeight = height;
+
+
+    // -----------------------------------------------------
+    // Չափափոխում ենք բոլոր բաց թերթիկները
+    // -----------------------------------------------------
+
+    foreach (Window window in
+             Application.Current.Windows)
+    {
+        if (window is MainWindow noteWindow)
+        {
+            noteWindow.Note.Width = width;
+            noteWindow.Note.Height = height;
+
+            noteWindow.UpdateWindowSizeForRotation(false);
+
+            noteWindow.UpdateDataFromWindow();
+        }
+    }
+}
+
+private void Size150x220_Click(
+    object sender,
+    RoutedEventArgs e)
+{
+    ApplyNoteSize(150, 220);
+}
 
         // =========================================================
         // WINDOW LOADED
@@ -281,26 +328,37 @@ private void UpdateDataFromWindow()
         // =========================================================
 
         private void Note_MouseEnter(
-            object sender,
-            MouseEventArgs e)
-        {
-            CloseButton.Visibility =
-                Visibility.Visible;
-        }
+    object sender,
+    MouseEventArgs e)
+{
+    CloseButton.Visibility =
+        Visibility.Visible;
+
+    EditButtons.Visibility =
+        Visibility.Visible;
+}
 
 
         private void Note_MouseLeave(
-            object sender,
-            MouseEventArgs e)
-        {
-            if (!isRotating &&
-                !isMoving &&
-                !CloseButton.IsMouseOver)
-            {
-                CloseButton.Visibility =
-                    Visibility.Collapsed;
-            }
-        }
+    object sender,
+    MouseEventArgs e)
+{
+    if (!isRotating &&
+        !isMoving &&
+        !CloseButton.IsMouseOver)
+    {
+        CloseButton.Visibility =
+            Visibility.Collapsed;
+    }
+
+    if (!isRotating &&
+        !isMoving &&
+        !CloseButton.IsMouseOver)
+    {
+        EditButtons.Visibility =
+            Visibility.Collapsed;
+    }
+}
 
 
         private void CloseButton_MouseEnter(
@@ -323,6 +381,75 @@ private void UpdateDataFromWindow()
             }
         }
 
+private void NewButton_MouseEnter(
+    object sender,
+    MouseEventArgs e)
+{
+    NewButton.Foreground =
+        Brushes.Black;
+
+    NewButton.FontWeight =
+        FontWeights.ExtraBold;
+}
+
+
+private void NewButton_MouseLeave(
+    object sender,
+    MouseEventArgs e)
+{
+    NewButton.Foreground =
+        new SolidColorBrush(
+            Color.FromRgb(85, 85, 85));
+
+    NewButton.FontWeight =
+        FontWeights.Normal;
+}
+
+
+private void DeleteButton_MouseEnter(
+    object sender,
+    MouseEventArgs e)
+{
+    if (!DeleteButton.IsEnabled)
+        return;
+
+    DeleteButton.Foreground =
+        Brushes.Black;
+
+    DeleteButton.FontWeight =
+        FontWeights.ExtraBold;
+}
+
+
+private void DeleteButton_MouseLeave(
+    object sender,
+    MouseEventArgs e)
+{
+    DeleteButton.Foreground =
+        new SolidColorBrush(
+            Color.FromRgb(85, 85, 85));
+
+    DeleteButton.FontWeight =
+        FontWeights.Normal;
+}
+
+private void DeleteButton_Click(
+    object sender,
+    RoutedEventArgs e)
+{
+    NoteStore store =
+        ((App)Application.Current).Store;
+
+    store.DeletedNotes[Data.Id] =
+        Data;
+
+    store.Notes.Remove(
+        Data.Id);
+
+    Close();
+}
+
+
 
         // =========================================================
         // ՓԱԿԵԼ
@@ -342,6 +469,12 @@ private void UpdateDataFromWindow()
         {
             Close();
         }
+
+        private void UndoDelete_Click(
+    object sender,
+    RoutedEventArgs e)
+{
+}
 
 
         // =========================================================
