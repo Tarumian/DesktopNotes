@@ -5,6 +5,8 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Collections.Generic;
+using System.Text;
 
 
 namespace DesktopNotes
@@ -49,50 +51,69 @@ namespace DesktopNotes
         // =========================================================
 
         public MainWindow()
-        {
-            InitializeComponent();
+{
+    InitializeComponent();
 
-            Data = new NoteData();
+    Data = new NoteData();
 
-            ((App)Application.Current).Store.Notes[Data.Id] = Data;
+    ((App)Application.Current).Store.Notes[Data.Id] = Data;
 
-            Note.Width =
-    ((App)Application.Current).Store.NoteWidth;
+    InitializeNoteVisuals();
 
-Note.Height =
-    ((App)Application.Current).Store.NoteHeight;
+    // -----------------------------------------------------
+    // Այս Window-ը taskbar-ի միակ ներկայացուցիչն է։
+    // -----------------------------------------------------
 
-            NoteRotation.Angle = 0;
+    ShowInTaskbar = true;
 
-            NoteText.FontFamily =
-                new FontFamily("Comic Sans MS");
+    Loaded += MainWindow_Loaded;
+}
 
-            NoteText.FontSize = 14;
+private void InitializeNoteVisuals()
+{
+    Note.Width =
+        ((App)Application.Current).Store.NoteWidth;
 
-            NoteText.FontWeight =
-                FontWeights.Normal;
+    Note.Height =
+        ((App)Application.Current).Store.NoteHeight;
 
-            NoteText.FontStyle =
-                FontStyles.Normal;
+    NoteRotation.Angle = 0;
 
-            NoteText.Document.Blocks.Clear();
+    NoteText.FontFamily =
+        new FontFamily("Comic Sans MS");
 
-            Paragraph paragraph =
-                new Paragraph();
+    NoteText.FontSize = 14;
 
-            paragraph.Inlines.Add(
-                new Run("Իմ առաջին թղթիկը"));
+    NoteText.FontWeight =
+        FontWeights.Normal;
 
-            NoteText.Document.Blocks.Add(paragraph);
+    NoteText.FontStyle =
+        FontStyles.Normal;
 
-            // -----------------------------------------------------
-            // Այս Window-ը taskbar-ի միակ ներկայացուցիչն է։
-            // -----------------------------------------------------
+    NoteText.Document.Blocks.Clear();
 
-            ShowInTaskbar = true;
+    Paragraph paragraph =
+        new Paragraph();
 
-            Loaded += MainWindow_Loaded;
-        }
+    paragraph.Inlines.Add(
+        new Run("Իմ առաջին թղթիկը"));
+
+    NoteText.Document.Blocks.Add(paragraph);
+}
+
+public MainWindow(
+    NoteData existingData)
+{
+    InitializeComponent();
+
+    Data = existingData;
+
+    ShowInTaskbar = false;
+
+    Loaded += MainWindow_Loaded;
+}
+
+
 
 
         // =========================================================
@@ -437,14 +458,40 @@ private void DeleteButton_Click(
     object sender,
     RoutedEventArgs e)
 {
+    // -----------------------------------------------------
+    // Նախ թարմացնում ենք Data-ն էկրանի իրական վիճակից
+    // -----------------------------------------------------
+
+    UpdateDataFromWindow();
+
+
+    // -----------------------------------------------------
+    // Կենտրոնական պահոցը
+    // -----------------------------------------------------
+
     NoteStore store =
         ((App)Application.Current).Store;
+
+
+    // -----------------------------------------------------
+    // Պահում ենք ջնջված թերթիկը Undo-ի համար
+    // -----------------------------------------------------
 
     store.DeletedNotes[Data.Id] =
         Data;
 
+
+    // -----------------------------------------------------
+    // Հեռացնում ենք գործող թերթիկների պահոցից
+    // -----------------------------------------------------
+
     store.Notes.Remove(
         Data.Id);
+
+
+    // -----------------------------------------------------
+    // Փակում ենք թերթիկը
+    // -----------------------------------------------------
 
     Close();
 }
@@ -474,6 +521,116 @@ private void DeleteButton_Click(
     object sender,
     RoutedEventArgs e)
 {
+    NoteStore store =
+        ((App)Application.Current).Store;
+
+    if (store.DeletedNotes.Count == 0)
+        return;
+
+
+    // -----------------------------------------------------
+    // Վերցնում ենք վերջին ջնջված թերթիկը
+    // -----------------------------------------------------
+
+    Guid id =
+        new List<Guid>(
+            store.DeletedNotes.Keys)[
+                store.DeletedNotes.Count - 1];
+
+    NoteData restoredData =
+        store.DeletedNotes[id];
+
+
+    // -----------------------------------------------------
+    // Վերադարձնում ենք տվյալը հիմնական պահոց
+    // -----------------------------------------------------
+
+    store.DeletedNotes.Remove(id);
+
+    store.Notes[id] =
+        restoredData;
+
+
+    // -----------------------------------------------------
+    // Ստեղծում ենք պատուհանը՝ արդեն գոյություն ունեցող տվյալով
+    // -----------------------------------------------------
+
+    MainWindow restoredNote =
+        new MainWindow(restoredData);
+
+
+    // -----------------------------------------------------
+    // Վերականգնում ենք թերթիկի տեսողական հատկությունները
+    // -----------------------------------------------------
+
+    restoredNote.Note.Width =
+        restoredData.Width;
+
+    restoredNote.Note.Height =
+        restoredData.Height;
+
+    restoredNote.Left =
+        restoredData.Left;
+
+    restoredNote.Top =
+        restoredData.Top;
+
+    restoredNote.NoteRotation.Angle =
+        restoredData.Rotation;
+
+    restoredNote.Note.Background =
+        new SolidColorBrush(
+            (Color)ColorConverter.ConvertFromString(
+                restoredData.NoteColor));
+
+    restoredNote.NoteText.FontFamily =
+        new FontFamily(
+            restoredData.FontFamily);
+
+    restoredNote.NoteText.FontSize =
+        restoredData.FontSize;
+
+    restoredNote.NoteText.FontWeight =
+        restoredData.IsBold
+            ? FontWeights.Bold
+            : FontWeights.Normal;
+
+    restoredNote.NoteText.FontStyle =
+        restoredData.IsItalic
+            ? FontStyles.Italic
+            : FontStyles.Normal;
+
+
+    // -----------------------------------------------------
+    // Վերականգնում ենք տեքստը
+    // -----------------------------------------------------
+
+    using (MemoryStream stream =
+       new MemoryStream(
+           Encoding.UTF8.GetBytes(
+               restoredData.RtfContent)))
+{
+    TextRange range =
+        new TextRange(
+            restoredNote.NoteText.Document.ContentStart,
+            restoredNote.NoteText.Document.ContentEnd);
+
+    range.Load(
+        stream,
+        DataFormats.Rtf);
+}
+
+
+    // -----------------------------------------------------
+    // Ցուցադրում ենք
+    // -----------------------------------------------------
+
+    restoredNote.ShowInTaskbar =
+        false;
+
+    restoredNote.Show();
+
+    restoredNote.Activate();
 }
 
 
@@ -511,10 +668,15 @@ private void DeleteButton_Click(
 
 
         private void NoteContextMenu_Opened(
-            object sender,
-            RoutedEventArgs e)
-        {
-        }
+    object sender,
+    RoutedEventArgs e)
+{
+    NoteStore store =
+        ((App)Application.Current).Store;
+
+    UndoDeleteMenuItem.IsEnabled =
+        store.DeletedNotes.Count > 0;
+}
 
 
         // =========================================================

@@ -11,10 +11,10 @@ namespace DesktopNotes
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // Թերթիկի պարունակությունը
-public string Text { get; set; } = string.Empty;
+        public string Text { get; set; } = string.Empty;
 
-// RichTextBox-ի ամբողջական ձեւավորումը
-public string RtfContent { get; set; } = string.Empty;
+        // RichTextBox-ի ամբողջական ձեւավորումը
+        public string RtfContent { get; set; } = string.Empty;
 
         // Թերթիկի տեսողական հատկությունները
         public double Width { get; set; }

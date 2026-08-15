@@ -84,7 +84,8 @@
 
                 <Separator/>
 
-                <MenuItem Header="Հետարկել ջնջումը"
+                <MenuItem x:Name="UndoDeleteMenuItem"
+          Header="Հետարկել ջնջումը"
           Click="UndoDelete_Click"
           IsEnabled="False"/>
 
@@ -303,6 +304,9 @@
                              AcceptsReturn="True"
                              Cursor="IBeam"
                              ContextMenu="{x:Null}"
+                             IsInactiveSelectionHighlightEnabled="True"
+                             SelectionBrush="#7e8fac"
+                             SelectionOpacity="0.5"
                              MouseRightButtonDown="NoteText_MouseRightButtonDown"/>
 
 
