@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using System.Collections.Generic;
 using System.Text;
 
@@ -13,6 +14,15 @@ namespace DesktopNotes
 {
     public partial class MainWindow : Window
 {
+    
+    private TextPointer? selectionAnchor;
+
+    private Point selectionStartPoint;
+
+    private bool isTextSelecting;
+
+    private DispatcherTimer? textSaveTimer;    
+    
     private NoteData Data;
 
     // =========================================================
@@ -60,6 +70,8 @@ namespace DesktopNotes
 
     InitializeNoteVisuals();
 
+    InitializeTextSaveTimer();
+
     // -----------------------------------------------------
     // Այս Window-ը taskbar-ի միակ ներկայացուցիչն է։
     // -----------------------------------------------------
@@ -68,6 +80,211 @@ namespace DesktopNotes
 
     Loaded += MainWindow_Loaded;
 }
+
+
+private void ApplyDataToWindow()
+{
+    // =====================================================
+    // ՉԱՓԵՐ ԵՒ ԴԻՐՔ
+    // =====================================================
+
+    Note.Width =
+        Data.Width;
+
+    Note.Height =
+        Data.Height;
+
+    Left =
+        Data.Left;
+
+    Top =
+        Data.Top;
+
+
+    // =====================================================
+    // ՊՏՏՈՒՄ
+    // =====================================================
+
+    NoteRotation.Angle =
+        Data.Rotation;
+
+
+    // =====================================================
+    // ԹԵՐԹԻԿԻ ԳՈՒՅՆ
+    // =====================================================
+
+    Note.Background =
+        new SolidColorBrush(
+            (Color)ColorConverter.ConvertFromString(
+                Data.NoteColor));
+
+
+    // =====================================================
+    // ՏԱՌԱՏԵՍԱԿ
+    // =====================================================
+
+    NoteText.FontFamily =
+        new FontFamily(
+            Data.FontFamily);
+
+
+    // =====================================================
+    // ԿԵՏԱՉԱՓ
+    // =====================================================
+
+    NoteText.FontSize =
+        Data.FontSize;
+
+
+    // =====================================================
+    // ԹԱՎ
+    // =====================================================
+
+    NoteText.FontWeight =
+        Data.IsBold
+            ? FontWeights.Bold
+            : FontWeights.Normal;
+
+
+    // =====================================================
+    // ՇԵՂ
+    // =====================================================
+
+    NoteText.FontStyle =
+        Data.IsItalic
+            ? FontStyles.Italic
+            : FontStyles.Normal;
+
+
+    // =====================================================
+    // ՏԵՔՍՏԻ ԳՈՒՅՆ
+    // =====================================================
+
+    NoteText.Foreground =
+        new SolidColorBrush(
+            (Color)ColorConverter.ConvertFromString(
+                Data.TextColor));
+
+
+    // =====================================================
+    // RTF
+    // =====================================================
+
+    if (!string.IsNullOrEmpty(Data.RtfContent))
+    {
+        using (MemoryStream stream =
+               new MemoryStream(
+                   Encoding.UTF8.GetBytes(
+                       Data.RtfContent)))
+        {
+            TextRange range =
+                new TextRange(
+                    NoteText.Document.ContentStart,
+                    NoteText.Document.ContentEnd);
+
+            range.Load(
+                stream,
+                DataFormats.Rtf);
+        }
+    }
+    else
+    {
+        NoteText.Document.Blocks.Clear();
+
+        Paragraph paragraph =
+            new Paragraph();
+
+        paragraph.Inlines.Add(
+            new Run(Data.Text));
+
+        NoteText.Document.Blocks.Add(
+            paragraph);
+    }
+}
+
+
+private void NoteText_PreviewMouseLeftButtonDown(
+    object sender,
+    MouseButtonEventArgs e)
+{
+    selectionStartPoint =
+        e.GetPosition(NoteText);
+
+    selectionAnchor =
+        NoteText.GetPositionFromPoint(
+            selectionStartPoint,
+            true);
+
+    isTextSelecting = false;
+}
+
+
+private void NoteText_PreviewMouseMove(
+    object sender,
+    MouseEventArgs e)
+{
+    if (selectionAnchor == null ||
+        e.LeftButton != MouseButtonState.Pressed)
+        return;
+
+    Point currentPoint =
+        e.GetPosition(NoteText);
+
+    double dx =
+        Math.Abs(
+            currentPoint.X -
+            selectionStartPoint.X);
+
+    double dy =
+        Math.Abs(
+            currentPoint.Y -
+            selectionStartPoint.Y);
+
+    // -----------------------------------------------------
+    // Սկսում ենք ընտրությունը միայն փոքր տեղաշարժից հետո
+    // -----------------------------------------------------
+
+    if (!isTextSelecting)
+    {
+        if (dx < 2 && dy < 2)
+            return;
+
+        isTextSelecting = true;
+
+        NoteText.CaptureMouse();
+    }
+
+    TextPointer currentPosition =
+        NoteText.GetPositionFromPoint(
+            currentPoint,
+            true);
+
+    if (currentPosition == null)
+        return;
+
+    NoteText.Selection.Select(
+        selectionAnchor,
+        currentPosition);
+
+    e.Handled = true;
+}
+
+
+private void NoteText_PreviewMouseLeftButtonUp(
+    object sender,
+    MouseButtonEventArgs e)
+{
+    if (isTextSelecting)
+    {
+        e.Handled = true;
+
+        NoteText.ReleaseMouseCapture();
+    }
+
+    selectionAnchor = null;
+    isTextSelecting = false;
+}
+
 
 private void InitializeNoteVisuals()
 {
@@ -92,13 +309,8 @@ private void InitializeNoteVisuals()
 
     NoteText.Document.Blocks.Clear();
 
-    Paragraph paragraph =
-        new Paragraph();
-
-    paragraph.Inlines.Add(
-        new Run("Իմ առաջին թղթիկը"));
-
-    NoteText.Document.Blocks.Add(paragraph);
+NoteText.Document.Blocks.Add(
+    new Paragraph());
 }
 
 public MainWindow(
@@ -107,6 +319,8 @@ public MainWindow(
     InitializeComponent();
 
     Data = existingData;
+
+    ApplyDataToWindow();
 
     ShowInTaskbar = false;
 
@@ -176,6 +390,54 @@ private void UpdateDataFromWindow()
     }
 }
 
+private void InitializeTextSaveTimer()
+{
+    textSaveTimer =
+        new DispatcherTimer
+        {
+            Interval =
+                TimeSpan.FromMilliseconds(500)
+        };
+
+    textSaveTimer.Tick +=
+        TextSaveTimer_Tick;
+}
+
+
+private void NoteText_TextChanged(
+    object sender,
+    TextChangedEventArgs e)
+{
+    if (textSaveTimer == null)
+        return;
+
+    textSaveTimer.Stop();
+    textSaveTimer.Start();
+}
+
+
+private void TextSaveTimer_Tick(
+    object? sender,
+    EventArgs e)
+{
+    if (textSaveTimer == null)
+        return;
+
+    textSaveTimer.Stop();
+
+    SaveCurrentState();
+}
+
+private void SaveCurrentState()
+{
+    UpdateDataFromWindow();
+
+    DnoteStorage.Save(
+        ((App)Application.Current).Store);
+}
+
+
+
 // =========================================================
 // ԹԵՐԹԻԿՆԵՐԻ ԸՆԴՀԱՆՈՒՐ ՉԱՓ
 // =========================================================
@@ -212,6 +474,9 @@ private void ApplyNoteSize(
             noteWindow.UpdateDataFromWindow();
         }
     }
+
+    DnoteStorage.Save(store);
+
 }
 
 private void Size150x220_Click(
@@ -340,6 +605,8 @@ private void Size150x220_Click(
 
             newNote.Activate();
 
+            newNote.SaveCurrentState();
+
             newNote.NoteText.Focus();
         }
 
@@ -462,7 +729,7 @@ private void DeleteButton_Click(
     // Նախ թարմացնում ենք Data-ն էկրանի իրական վիճակից
     // -----------------------------------------------------
 
-    UpdateDataFromWindow();
+    SaveCurrentState();
 
 
     // -----------------------------------------------------
@@ -631,6 +898,8 @@ private void DeleteButton_Click(
     restoredNote.Show();
 
     restoredNote.Activate();
+
+    SaveCurrentState();
 }
 
 
@@ -759,7 +1028,7 @@ private void DeleteButton_Click(
             if (MoveArea.IsMouseCaptured)
                 MoveArea.ReleaseMouseCapture();
 
-            UpdateDataFromWindow();
+            SaveCurrentState();
 
         }
 
@@ -934,7 +1203,7 @@ private void DeleteButton_Click(
 
             Note.ReleaseMouseCapture();
 
-            UpdateDataFromWindow();
+            SaveCurrentState();
 
             e.Handled = true;
         }

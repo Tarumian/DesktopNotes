@@ -37,3 +37,13 @@ D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\refint\DesktopNotes.dll
 D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\DesktopNotes.pdb
 D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\DesktopNotes.genruntimeconfig.cache
 D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\ref\DesktopNotes.dll
+D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\App.baml
+D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\H.GeneratedIcons.System.Drawing.dll
+D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\H.NotifyIcon.dll
+D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\Microsoft.Win32.SystemEvents.dll
+D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\System.Drawing.Common.dll
+D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\System.Private.Windows.Core.dll
+D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\runtimes\win\lib\net8.0\Microsoft.Win32.SystemEvents.dll
+D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\DesktopNotes.csproj.AssemblyReference.cache
+D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\DesktopN.288CC42A.Up2Date
+D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\H.NotifyIcon.Wpf.dll
