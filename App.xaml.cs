@@ -56,7 +56,10 @@ public partial class App : Application
             new ContextMenu();
 
 
+        // -------------------------------------------------
         // Նոր թերթիկ
+        // -------------------------------------------------
+
         MenuItem newNoteItem =
             new MenuItem
             {
@@ -75,48 +78,58 @@ public partial class App : Application
             };
 
 
+        // -------------------------------------------------
         // Ցույց տալ բոլոր թերթիկները
-MenuItem showAllItem =
-    new MenuItem
-    {
-        Header = "Ցույց տալ բոլոր թերթիկները"
-    };
+        // -------------------------------------------------
 
-showAllItem.Click +=
-    (sender, args) =>
-    {
-        MainWindow[] openNotes =
-            Application.Current.Windows
-                .OfType<MainWindow>()
-                .ToArray();
-
-        // Եթե թերթիկներ արդեն բաց են՝
-        // պարզապես բերում ենք առաջ
-        if (openNotes.Length > 0)
-        {
-            foreach (MainWindow note in openNotes)
+        MenuItem showAllItem =
+            new MenuItem
             {
-                note.Show();
-                note.Activate();
-            }
+                Header = "Ցույց տալ բոլոր թերթիկները"
+            };
 
-            return;
-        }
-
-        // Եթե բաց թերթիկներ չկան՝
-        // վերականգնում ենք պահպանվածները
-        foreach (NoteData data in Store.Notes.Values)
-        {
-            MainWindow note =
-                new MainWindow(data);
-
-            note.ShowInTaskbar = false;
-            note.Show();
-        }
-    };
+        showAllItem.Click +=
+            (sender, args) =>
+            {
+                MainWindow[] openNotes =
+                    Application.Current.Windows
+                        .OfType<MainWindow>()
+                        .ToArray();
 
 
+                // Եթե թերթիկներ արդեն բաց են՝
+                // պարզապես բերում ենք առաջ
+
+                if (openNotes.Length > 0)
+                {
+                    foreach (MainWindow note in openNotes)
+                    {
+                        note.Show();
+                        note.Activate();
+                    }
+
+                    return;
+                }
+
+
+                // Եթե բաց թերթիկներ չկան՝
+                // վերականգնում ենք պահպանվածները
+
+                foreach (NoteData data in Store.Notes.Values)
+                {
+                    MainWindow note =
+                        new MainWindow(data);
+
+                    note.ShowInTaskbar = false;
+                    note.Show();
+                }
+            };
+
+
+        // -------------------------------------------------
         // Փակել բոլոր թերթիկները
+        // -------------------------------------------------
+
         MenuItem closeAllItem =
             new MenuItem
             {
@@ -130,7 +143,36 @@ showAllItem.Click +=
             };
 
 
+        // -------------------------------------------------
+        // Գործարկել Windows-ի հետ
+        // -------------------------------------------------
+
+        MenuItem startupItem =
+            new MenuItem
+            {
+                Header = "Գործարկել Windows-ի հետ",
+                IsCheckable = true,
+                IsChecked = StartupManager.IsEnabled()
+            };
+
+        startupItem.Click +=
+            (sender, args) =>
+            {
+                if (startupItem.IsChecked)
+                {
+                    StartupManager.Enable();
+                }
+                else
+                {
+                    StartupManager.Disable();
+                }
+            };
+
+
+        // -------------------------------------------------
         // Ելք
+        // -------------------------------------------------
+
         MenuItem exitItem =
             new MenuItem
             {
@@ -145,9 +187,14 @@ showAllItem.Click +=
             };
 
 
+        // -------------------------------------------------
+        // ՑԱՆԿԻ ԿԱՌՈՒՑՈՒՄ
+        // -------------------------------------------------
+
         menu.Items.Add(newNoteItem);
         menu.Items.Add(showAllItem);
         menu.Items.Add(closeAllItem);
+        menu.Items.Add(startupItem);
 
         menu.Items.Add(
             new Separator());
@@ -170,6 +217,30 @@ showAllItem.Click +=
             note.ShowInTaskbar = false;
 
             note.Show();
+        }
+
+
+        // -------------------------------------------------
+        // --new-note
+        // -------------------------------------------------
+
+        bool createNewNote =
+            Array.Exists(
+                e.Args,
+                argument =>
+                    string.Equals(
+                        argument,
+                        "--new-note",
+                        StringComparison.OrdinalIgnoreCase));
+
+        if (createNewNote)
+        {
+            MainWindow newNote =
+                new MainWindow();
+
+            newNote.Show();
+            newNote.Activate();
+            newNote.NoteText.Focus();
         }
     }
 
