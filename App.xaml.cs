@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 using H.NotifyIcon;
 
 namespace DesktopNotes;
@@ -30,20 +31,15 @@ public partial class App : Application
         // SYSTEM TRAY
         // -------------------------------------------------
 
-        trayIcon =
-            new TaskbarIcon
-            {
-                ToolTipText = "DesktopNotes",
-                Visibility = Visibility.Visible,
-
-                IconSource =
-                    new GeneratedIconSource
-                    {
-                        Text = "D",
-                        FontSize = 32,
-                        FontWeight = FontWeights.Bold
-                    }
-            };
+        trayIcon = new TaskbarIcon
+{
+    ToolTipText = "DesktopNotes",
+    Visibility = Visibility.Visible,
+    IconSource = new BitmapImage(
+        new Uri(
+            "pack://application:,,,/Assets/DesktopNotes.ico",
+            UriKind.Absolute))
+};
 
         trayIcon.ForceCreate();
 
