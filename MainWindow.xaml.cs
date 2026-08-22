@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 
 namespace DesktopNotes
@@ -200,6 +201,9 @@ private void ApplyDataToWindow()
         NoteText.Document.Blocks.Add(
             paragraph);
     }
+
+UpdateCompleteToolTip(); 
+
 }
 
 
@@ -783,6 +787,146 @@ private void DeleteButton_Click(
         {
             Close();
         }
+
+private void ExportExcel_Click(
+    object sender,
+    RoutedEventArgs e)
+{
+    // Նախ պահում ենք բոլոր բաց թերթիկների
+    // տվյալների վերջին վիճակը։
+    foreach (Window window in Application.Current.Windows)
+    {
+        if (window is MainWindow noteWindow)
+        {
+            noteWindow.SaveCurrentState();
+        }
+    }
+
+    NoteStore store =
+        ((App)Application.Current).Store;
+
+    Microsoft.Win32.SaveFileDialog dialog =
+        new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Արտահանել Excel",
+            Filter = "Excel ֆայլ (*.xlsx)|*.xlsx",
+            DefaultExt = ".xlsx",
+            AddExtension = true,
+            FileName =
+                "DesktopNotes_" +
+                DateTime.Now.ToString("yyyy-MM-dd_HH-mm")
+        };
+
+    if (dialog.ShowDialog() != true)
+        return;
+
+    try
+    {
+        using (var workbook =
+               new ClosedXML.Excel.XLWorkbook())
+        {
+            var worksheet =
+                workbook.Worksheets.Add("Թերթիկներ");
+
+            // Վերնագրեր
+            worksheet.Cell(1, 1).Value =
+                "Ստեղծման ամսաթիվ";
+
+            worksheet.Cell(1, 2).Value =
+                "Գրառում";
+
+            worksheet.Cell(1, 3).Value =
+                "Լուծված";
+
+            worksheet.Cell(1, 4).Value =
+                "Լուծման ամսաթիվ";
+
+            // Վերնագրերի ձեւավորում
+            var headerRange =
+                worksheet.Range(1, 1, 1, 4);
+
+            headerRange.Style.Font.Bold = true;
+
+            headerRange.Style.Fill.BackgroundColor =
+                ClosedXML.Excel.XLColor.LightGray;
+
+            // Թերթիկները՝ ստեղծման հերթականությամբ
+            var notes =
+                store.Notes.Values
+                    .OrderBy(note => note.CreatedAt)
+                    .ToList();
+
+            int row = 2;
+
+            foreach (NoteData note in notes)
+            {
+                worksheet.Cell(row, 1).Value =
+                    note.CreatedAt;
+
+                worksheet.Cell(row, 1)
+                    .Style.DateFormat.Format =
+                    "dd.MM.yyyy HH:mm";
+
+                worksheet.Cell(row, 2).Value =
+                    note.Text;
+
+                worksheet.Cell(row, 3).Value =
+                    note.IsCompleted
+                        ? "Այո"
+                        : "";
+
+                if (note.CompletedDate.HasValue)
+                {
+                    worksheet.Cell(row, 4).Value =
+                        note.CompletedDate.Value;
+
+                    worksheet.Cell(row, 4)
+                        .Style.DateFormat.Format =
+                        "dd.MM.yyyy HH:mm";
+                }
+
+                row++;
+            }
+
+            // Տեքստի տեղափոխում հաջորդ տող
+            worksheet.Column(2)
+                .Style.Alignment.WrapText = true;
+
+            // Սյունակների լայնությունը
+            worksheet.Column(1).Width = 20;
+            worksheet.Column(2).Width = 60;
+            worksheet.Column(3).Width = 12;
+            worksheet.Column(4).Width = 20;
+
+            // Ֆիլտր
+            if (row > 1)
+            {
+                worksheet.Range(
+                    1, 1,
+                    row - 1, 4)
+                    .SetAutoFilter();
+            }
+
+            // Վերնագիրը միշտ տեսանելի
+            worksheet.SheetView.FreezeRows(1);
+
+            workbook.SaveAs(dialog.FileName);
+        }
+
+        MessageBox.Show(
+            "Excel ֆայլը հաջողությամբ ստեղծվեց։",
+            "DesktopNotes");
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show(
+            "Excel ֆայլը ստեղծել չհաջողվեց։\n\n" +
+            ex.Message,
+            "DesktopNotes",
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
+    }
+}
 
         private void UndoDelete_Click(
     object sender,
@@ -1677,6 +1821,129 @@ private void DeleteButton_Click(
                 NoteText.Foreground =
                     brush;
             }
+
         }
+
+        private void CompleteButton_Click(
+    object sender,
+    RoutedEventArgs e)
+{
+    if (!Data.IsCompleted)
+    {
+        Data.IsCompleted = true;
+        Data.CompletedDate = DateTime.Now;
+    }
+    else
+    {
+        Data.IsCompleted = false;
+        Data.CompletedDate = null;
+    }
+
+    UpdateCompleteButtonAppearance();
+    UpdateCompleteToolTip();
+
+    DnoteStorage.Save(
+        ((App)Application.Current).Store);
+}
+
+private void UpdateCompleteToolTip()
+{
+    string created =
+        Data.CreatedAt.ToString("dd.MM.yyyy HH:mm");
+
+    if (Data.IsCompleted &&
+        Data.CompletedDate.HasValue)
+    {
+        string completed =
+            Data.CompletedDate.Value.ToString(
+                "dd.MM.yyyy HH:mm");
+
+        CompleteButton.ToolTip =
+            created + "\n" + completed;
+    }
+    else
+    {
+        CompleteButton.ToolTip = created;
+    }
+}
+
+private void UpdateCompleteButtonAppearance()
+{
+    if (Data.IsCompleted)
+    {
+        CompleteButton.Foreground = Brushes.ForestGreen;
+        CompleteButton.FontWeight = FontWeights.ExtraBold;
+    }
+    else
+    {
+        CompleteButton.Foreground =
+            new SolidColorBrush(
+                Color.FromRgb(85, 85, 85));
+
+        CompleteButton.FontWeight =
+            FontWeights.Normal;
+    }
+}
+
+private void CompleteButton_MouseEnter(
+    object sender,
+    MouseEventArgs e)
+{
+    if (Data.IsCompleted)
+    {
+        CompleteButton.Foreground =
+            Brushes.ForestGreen;
+        CompleteButton.FontWeight =
+            FontWeights.ExtraBold;
+    }
+    else
+    {
+        CompleteButton.Foreground =
+            new SolidColorBrush(
+                Color.FromRgb(85, 85, 85));
+
+        CompleteButton.FontWeight =
+            FontWeights.ExtraBold;
+    }
+}
+
+private void CompleteButton_MouseLeave(
+    object sender,
+    MouseEventArgs e)
+{
+    if (Data.IsCompleted)
+    {
+        CompleteButton.Foreground =
+            Brushes.ForestGreen;
+        CompleteButton.FontWeight =
+            FontWeights.ExtraBold;
+    }
+    else
+    {
+        CompleteButton.Foreground =
+            new SolidColorBrush(
+                Color.FromRgb(85, 85, 85));
+
+        CompleteButton.FontWeight =
+            FontWeights.Normal;
+    }
+}
+
+private void NoteWindow_MouseEnter(
+    object sender,
+    MouseEventArgs e)
+{
+    QuickToolbar.Visibility = Visibility.Visible;
+}
+
+private void NoteWindow_MouseLeave(
+    object sender,
+    MouseEventArgs e)
+{
+    QuickToolbar.Visibility = Visibility.Collapsed;
+}
+
+
+
     }
 }

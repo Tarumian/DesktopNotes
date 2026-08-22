@@ -47,3 +47,11 @@ D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\refint\DesktopNotes.dll
 D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\DesktopNotes.pdb
 D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\DesktopNotes.genruntimeconfig.cache
 D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\ref\DesktopNotes.dll
+D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\ClosedXML.dll
+D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\ClosedXML.Parser.dll
+D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\DocumentFormat.OpenXml.dll
+D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\DocumentFormat.OpenXml.Framework.dll
+D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\ExcelNumberFormat.dll
+D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\RBush.dll
+D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\SixLabors.Fonts.dll
+D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\System.IO.Packaging.dll

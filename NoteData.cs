@@ -45,5 +45,9 @@ namespace DesktopNotes
         // Հետագայում սա կօգտագործվի տրցակի կառուցվածքը
         // վերականգնելու համար։
         public int StackOrder { get; set; }
+
+        public bool IsCompleted { get; set; } = false;
+
+        public DateTime? CompletedDate { get; set; }
     }
 }
