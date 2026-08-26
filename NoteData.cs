@@ -49,5 +49,7 @@ namespace DesktopNotes
         public bool IsCompleted { get; set; } = false;
 
         public DateTime? CompletedDate { get; set; }
+
+        public bool IsClosed { get; set; } = false;
     }
 }

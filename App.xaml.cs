@@ -113,6 +113,9 @@ public partial class App : Application
 
                 foreach (NoteData data in Store.Notes.Values)
                 {
+                    if (data.IsClosed)
+                        continue;
+
                     MainWindow note =
                         new MainWindow(data);
 
@@ -188,6 +191,40 @@ public partial class App : Application
         // -------------------------------------------------
 
         menu.Items.Add(newNoteItem);
+
+// -------------------------------------------------
+// Որոնել թերթիկներ
+// -------------------------------------------------
+
+MenuItem searchItem =
+    new MenuItem
+    {
+        Header = "Որոնել թերթիկներ"
+    };
+
+searchItem.Click +=
+    (sender, args) =>
+    {
+        SearchWindow[] searchWindows =
+            Application.Current.Windows
+                .OfType<SearchWindow>()
+                .ToArray();
+
+        if (searchWindows.Length > 0)
+        {
+            searchWindows[0].Show();
+            searchWindows[0].Activate();
+            return;
+        }
+
+        SearchWindow searchWindow =
+            new SearchWindow();
+
+        searchWindow.Show();
+        searchWindow.Activate();
+    };
+
+        menu.Items.Add(searchItem);
         menu.Items.Add(showAllItem);
         menu.Items.Add(closeAllItem);
         menu.Items.Add(startupItem);
@@ -205,15 +242,17 @@ public partial class App : Application
         // Պահպանված թերթիկները
         // -------------------------------------------------
 
-        foreach (NoteData data in Store.Notes.Values)
-        {
-            MainWindow note =
-                new MainWindow(data);
+foreach (NoteData data in Store.Notes.Values)
+{
+    if (data.IsClosed)
+        continue;
 
-            note.ShowInTaskbar = false;
+    MainWindow note =
+        new MainWindow(data);
 
-            note.Show();
-        }
+    note.ShowInTaskbar = false;
+    note.Show();
+}
 
 
         // -------------------------------------------------

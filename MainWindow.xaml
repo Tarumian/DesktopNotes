@@ -9,6 +9,7 @@
         Background="Transparent"
         ResizeMode="NoResize"
         ShowInTaskbar="True"
+        PreviewMouseLeftButtonDown="NoteWindow_PreviewMouseLeftButtonDown"
         MouseEnter="NoteWindow_MouseEnter"
         MouseLeave="NoteWindow_MouseLeave">
 
@@ -23,9 +24,12 @@
                          Opened="NoteContextMenu_Opened">
 
                 <MenuItem Header="Նոր թերթիկ"
-                          Click="NewNote_Click"/>
+          Click="NewNote_Click"/>
 
-                <Separator/>
+<MenuItem Header="Որոնել թերթիկներ"
+          Click="SearchNotes_Click"/>
+
+<Separator/>
 
                 <MenuItem Header="Տառատեսակ">
                     <MenuItem Header="Arial"

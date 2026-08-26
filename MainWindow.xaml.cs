@@ -82,6 +82,7 @@ namespace DesktopNotes
     Loaded += MainWindow_Loaded;
 }
 
+public Guid NoteId => Data.Id;
 
 private void ApplyDataToWindow()
 {
@@ -512,6 +513,8 @@ private void Size150x220_Click(
             object sender,
             RoutedEventArgs e)
         {
+
+            
             // -----------------------------------------------------
             // Ընթացիկ թերթիկի կենտրոնը՝ էկրանի կոորդինատներով։
             // -----------------------------------------------------
@@ -613,6 +616,30 @@ private void Size150x220_Click(
 
             newNote.NoteText.Focus();
         }
+
+
+        private void SearchNotes_Click(
+    object sender,
+    RoutedEventArgs e)
+{
+    SearchWindow[] searchWindows =
+        Application.Current.Windows
+            .OfType<SearchWindow>()
+            .ToArray();
+
+    if (searchWindows.Length > 0)
+    {
+        searchWindows[0].Show();
+        searchWindows[0].Activate();
+        return;
+    }
+
+    SearchWindow searchWindow =
+        new SearchWindow();
+
+    searchWindow.Show();
+    searchWindow.Activate();
+}
 
 
         // =========================================================
@@ -774,19 +801,27 @@ private void DeleteButton_Click(
         // =========================================================
 
         private void CloseButton_Click(
-            object sender,
-            RoutedEventArgs e)
-        {
-            Close();
-        }
+    object sender,
+    RoutedEventArgs e)
+{
+    Data.IsClosed = true;
+
+    SaveCurrentState();
+
+    Close();
+}
 
 
         private void CloseMenu_Click(
-            object sender,
-            RoutedEventArgs e)
-        {
-            Close();
-        }
+    object sender,
+    RoutedEventArgs e)
+{
+    Data.IsClosed = true;
+
+    SaveCurrentState();
+
+    Close();
+}
 
 private void ExportExcel_Click(
     object sender,
@@ -1259,6 +1294,31 @@ private void ExportExcel_Click(
 
             StartRotation(e);
         }
+
+
+// =================================================
+// Որոնման պատուհանը առաջ բերել
+// =================================================
+
+private void NoteWindow_PreviewMouseLeftButtonDown(
+    object sender,
+    MouseButtonEventArgs e)
+{
+    SearchWindow[] searchWindows =
+        Application.Current.Windows
+            .OfType<SearchWindow>()
+            .ToArray();
+
+    if (searchWindows.Length == 0)
+        return;
+
+    SearchWindow searchWindow = searchWindows[0];
+
+    if (!searchWindow.IsVisible)
+        searchWindow.Show();
+
+    searchWindow.Activate();
+}
 
 
         // =========================================================
