@@ -10,6 +10,7 @@
         ResizeMode="NoResize"
         ShowInTaskbar="True"
         PreviewMouseLeftButtonDown="NoteWindow_PreviewMouseLeftButtonDown"
+        Loaded="QuickToolbar_Loaded"
         MouseEnter="NoteWindow_MouseEnter"
         MouseLeave="NoteWindow_MouseLeave">
 
@@ -288,99 +289,214 @@
 
 <Border x:Name="QuickToolbar"
         Height="24"
-        HorizontalAlignment="Stretch"
+        Width="{Binding ActualWidth, ElementName=Note}"
+        HorizontalAlignment="Left"
         VerticalAlignment="Top"
-        Margin="0,12,0,0"
+        Margin="5,12,0,0"
         Background="Transparent"
         Visibility="Collapsed">
 
     <StackPanel Orientation="Horizontal"
-                HorizontalAlignment="Center"
+                HorizontalAlignment="Left"
                 VerticalAlignment="Center">
 
         <!-- Թավ -->
-        <Button Content="B"
-                Width="28"
-                Height="22"
+        <Button x:Name="QuickBoldButton"
+                Margin="0,0,0,0"
+                Content="B"
+                Width="16"
+                Height="16"
                 FontSize="14"
                 FontWeight="Bold"
+                Foreground="#555555"
                 Background="Transparent"
                 BorderThickness="0"
-                FocusVisualStyle="{x:Null}">
+                Padding="0"
+                FocusVisualStyle="{x:Null}"
+                Click="QuickBoldButton_Click"
+                MouseEnter="QuickButton_MouseEnter"
+                MouseLeave="QuickButton_MouseLeave">
             <Button.Template>
                 <ControlTemplate TargetType="Button">
-                    <ContentPresenter
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"/>
+                    <Grid>
+
+                        <!-- Միայն hover-ի քառակուսին՝ 2 px ներքեւ -->
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="5">
+                            <Border.RenderTransform>
+                                <TranslateTransform Y="2"/>
+                            </Border.RenderTransform>
+                        </Border>
+
+                        <!-- B-ն չի շարժվում -->
+                        <ContentPresenter
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"/>
+
+                    </Grid>
                 </ControlTemplate>
             </Button.Template>
         </Button>
 
         <!-- Շեղ -->
-        <Button Content="I"
-                Width="28"
-                Height="22"
+        <Button x:Name="QuickItalicButton"
+                Content="I"
+                Width="16"
+                Height="16"
                 FontSize="14"
                 FontStyle="Italic"
+                Foreground="#555555"
                 Background="Transparent"
                 BorderThickness="0"
-                FocusVisualStyle="{x:Null}">
+                Padding="0"
+                FocusVisualStyle="{x:Null}"
+                Click="QuickItalicButton_Click"
+                MouseEnter="QuickButton_MouseEnter"
+                MouseLeave="QuickButton_MouseLeave">
             <Button.Template>
                 <ControlTemplate TargetType="Button">
-                    <ContentPresenter
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"/>
+                    <Grid>
+
+                        <!-- Միայն hover-ի քառակուսին՝ 2 px ներքեւ -->
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="5">
+                            <Border.RenderTransform>
+                                <TranslateTransform Y="2"/>
+                            </Border.RenderTransform>
+                        </Border>
+
+                        <!-- B-ն չի շարժվում -->
+                        <ContentPresenter
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"/>
+
+                    </Grid>
                 </ControlTemplate>
             </Button.Template>
         </Button>
 
-        <!-- Տառի գույն -->
-        <Button Content="A"
-                Width="28"
-                Height="22"
-                FontSize="14"
+        <!-- ՏԵՔՍՏԻ ԳՈՒՅՆ -->
+        <Button x:Name="QuickTextColorButton"
+                Margin="0,4,0,0"
+                Width="16"
+                Height="16"
                 Background="Transparent"
                 BorderThickness="0"
-                FocusVisualStyle="{x:Null}">
+                Padding="0"
+                FocusVisualStyle="{x:Null}"
+                Click="QuickTextColorButton_Click"
+                MouseEnter="QuickButton_MouseEnter"
+                MouseLeave="QuickButton_MouseLeave"
+                ToolTip="Տեքստի գույն">
             <Button.Template>
                 <ControlTemplate TargetType="Button">
-                    <ContentPresenter
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"/>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="5">
+                        <Grid>
+                            <Border x:Name="QuickTextColorPreview"
+                                    Width="10"
+                                    Height="10"
+                                    Background="#000000"
+                                    BorderBrush="#555555"
+                                    BorderThickness="1"
+                                    CornerRadius="2"/>
+                            <Ellipse x:Name="MixedColorIndicator"
+                                     Width="3"
+                                     Height="3"
+                                     Fill="#555555"
+                                     Visibility="Collapsed"/>
+                        </Grid>
+                    </Border>
                 </ControlTemplate>
             </Button.Template>
         </Button>
+
+        <Popup x:Name="TextColorPalettePopup"
+               AllowsTransparency="True"
+               Placement="Bottom"
+               PlacementTarget="{Binding ElementName=QuickTextColorButton}"
+               StaysOpen="False">
+            <Border Margin="0,4,0,0"
+                    Padding="4"
+                    Background="White"
+                    BorderBrush="#D0D0D0"
+                    BorderThickness="1"
+                    CornerRadius="5">
+                <UniformGrid Columns="3">
+                    <UniformGrid.Resources>
+                        <Style TargetType="Button">
+                            <Setter Property="Width" Value="16"/>
+                            <Setter Property="Height" Value="16"/>
+                            <Setter Property="Margin" Value="1"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </UniformGrid.Resources>
+                    <Button Tag="#000000" Click="PaletteColor_Click" ToolTip="Սեւ"><Border Width="10" Height="10" Background="#000000" CornerRadius="2"/></Button>
+                    <Button Tag="#464646" Click="PaletteColor_Click" ToolTip="Մուգ մոխրագույն"><Border Width="10" Height="10" Background="#464646" CornerRadius="2"/></Button>
+                    <Button Tag="#B40000" Click="PaletteColor_Click" ToolTip="Կարմիր"><Border Width="10" Height="10" Background="#B40000" CornerRadius="2"/></Button>
+                    <Button Tag="#0046B4" Click="PaletteColor_Click" ToolTip="Կապույտ"><Border Width="10" Height="10" Background="#0046B4" CornerRadius="2"/></Button>
+                    <Button Tag="#00783C" Click="PaletteColor_Click" ToolTip="Կանաչ"><Border Width="10" Height="10" Background="#00783C" CornerRadius="2"/></Button>
+                    <Button Tag="#78461E" Click="PaletteColor_Click" ToolTip="Շագանակագույն"><Border Width="10" Height="10" Background="#78461E" CornerRadius="2"/></Button>
+                    <Button Tag="#6A1B9A" Click="PaletteColor_Click" ToolTip="Մանուշակագույն"><Border Width="10" Height="10" Background="#6A1B9A" CornerRadius="2"/></Button>
+                    <Button Tag="#E06C00" Click="PaletteColor_Click" ToolTip="Նարնջագույն"><Border Width="10" Height="10" Background="#E06C00" CornerRadius="2"/></Button>
+                    <Button Click="CustomTextColor_Click" ToolTip="Այլ գույն..."><Border Width="10" Height="10" Background="White" BorderBrush="#777777" BorderThickness="1" CornerRadius="2"><TextBlock Text="…" FontSize="9" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border></Button>
+                </UniformGrid>
+            </Border>
+        </Popup>
 
         <!-- Տողամիջոց -->
         <Button Content="↕"
-                Width="28"
-                Height="22"
+                Width="16"
+                Height="16"
                 FontSize="14"
                 Background="Transparent"
                 BorderThickness="0"
-                FocusVisualStyle="{x:Null}">
+                Padding="0"
+                FocusVisualStyle="{x:Null}"
+                MouseEnter="QuickButton_MouseEnter"
+                MouseLeave="QuickButton_MouseLeave">
             <Button.Template>
                 <ControlTemplate TargetType="Button">
-                    <ContentPresenter
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"/>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="5">
+                        <ContentPresenter
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"/>
+                    </Border>
                 </ControlTemplate>
             </Button.Template>
         </Button>
 
         <!-- Պարբերություն -->
         <Button Content="¶"
-                Width="28"
-                Height="22"
+                Width="16"
+                Height="16"
                 FontSize="14"
                 Background="Transparent"
                 BorderThickness="0"
-                FocusVisualStyle="{x:Null}">
+                Padding="0"
+                FocusVisualStyle="{x:Null}"
+                MouseEnter="QuickButton_MouseEnter"
+                MouseLeave="QuickButton_MouseLeave">
             <Button.Template>
                 <ControlTemplate TargetType="Button">
-                    <ContentPresenter
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"/>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="5">
+                        <ContentPresenter
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"/>
+                    </Border>
                 </ControlTemplate>
             </Button.Template>
         </Button>
@@ -404,6 +520,7 @@
              VerticalAlignment="Stretch"
              Margin="12,36,12,12"
              TextChanged="NoteText_TextChanged"
+             SelectionChanged="NoteText_SelectionChanged"
              FontFamily="Comic Sans MS"
              FontSize="14"
              Foreground="#222222"

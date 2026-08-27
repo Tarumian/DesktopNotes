@@ -57,3 +57,8 @@ D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\SixLabors.Fonts.dll
 D:\Tarumian\DesktopNotes\bin\Debug\net8.0-windows\System.IO.Packaging.dll
 D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\SearchWindow.baml
 D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\SearchWindow.g.cs
+C:\Users\post\AppData\Local\Temp\DesktopNotes-verify\DesktopNotes.exe
+C:\Users\post\AppData\Local\Temp\DesktopNotes-verify\DesktopNotes.deps.json
+C:\Users\post\AppData\Local\Temp\DesktopNotes-verify\DesktopNotes.runtimeconfig.json
+C:\Users\post\AppData\Local\Temp\DesktopNotes-verify\DesktopNotes.dll
+C:\Users\post\AppData\Local\Temp\DesktopNotes-verify\DesktopNotes.pdb

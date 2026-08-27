@@ -718,7 +718,7 @@ private void NewButton_MouseLeave(
 {
     NewButton.Foreground =
         new SolidColorBrush(
-            Color.FromRgb(85, 85, 85));
+            ColorFromHex("#555555"));
 
     NewButton.FontWeight =
         FontWeights.Normal;
@@ -746,7 +746,7 @@ private void DeleteButton_MouseLeave(
 {
     DeleteButton.Foreground =
         new SolidColorBrush(
-            Color.FromRgb(85, 85, 85));
+            ColorFromHex("#555555"));
 
     DeleteButton.FontWeight =
         FontWeights.Normal;
@@ -1810,7 +1810,7 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
             RoutedEventArgs e)
         {
             SetTextColor(
-                Color.FromRgb(0, 0, 0));
+                ColorFromHex("#000000"));
         }
 
 
@@ -1819,7 +1819,7 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
             RoutedEventArgs e)
         {
             SetTextColor(
-                Color.FromRgb(70, 70, 70));
+                ColorFromHex("#464646"));
         }
 
 
@@ -1828,7 +1828,7 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
             RoutedEventArgs e)
         {
             SetTextColor(
-                Color.FromRgb(180, 0, 0));
+                ColorFromHex("#B40000"));
         }
 
 
@@ -1837,7 +1837,7 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
             RoutedEventArgs e)
         {
             SetTextColor(
-                Color.FromRgb(0, 70, 180));
+                ColorFromHex("#0046B4"));
         }
 
 
@@ -1846,7 +1846,7 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
             RoutedEventArgs e)
         {
             SetTextColor(
-                Color.FromRgb(0, 120, 60));
+                ColorFromHex("#00783C"));
         }
 
 
@@ -1855,7 +1855,7 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
             RoutedEventArgs e)
         {
             SetTextColor(
-                Color.FromRgb(120, 70, 30));
+                ColorFromHex("#78461E"));
         }
 
 
@@ -1938,7 +1938,7 @@ private void UpdateCompleteButtonAppearance()
     {
         CompleteButton.Foreground =
             new SolidColorBrush(
-                Color.FromRgb(85, 85, 85));
+                ColorFromHex("#555555"));
 
         CompleteButton.FontWeight =
             FontWeights.Normal;
@@ -1960,7 +1960,7 @@ private void CompleteButton_MouseEnter(
     {
         CompleteButton.Foreground =
             new SolidColorBrush(
-                Color.FromRgb(85, 85, 85));
+                ColorFromHex("#555555"));
 
         CompleteButton.FontWeight =
             FontWeights.ExtraBold;
@@ -1982,28 +1982,12 @@ private void CompleteButton_MouseLeave(
     {
         CompleteButton.Foreground =
             new SolidColorBrush(
-                Color.FromRgb(85, 85, 85));
+                ColorFromHex("#555555"));
 
         CompleteButton.FontWeight =
             FontWeights.Normal;
     }
 }
-
-private void NoteWindow_MouseEnter(
-    object sender,
-    MouseEventArgs e)
-{
-    QuickToolbar.Visibility = Visibility.Visible;
-}
-
-private void NoteWindow_MouseLeave(
-    object sender,
-    MouseEventArgs e)
-{
-    QuickToolbar.Visibility = Visibility.Collapsed;
-}
-
-
 
     }
 }
