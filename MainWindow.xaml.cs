@@ -23,6 +23,10 @@ namespace DesktopNotes
     private bool isTextSelecting;
 
     private DispatcherTimer? textSaveTimer;    
+
+    // Ջնջման փակումը չպետք է վերածվի սովորական
+    // «փակել ու պահել» գործողության։
+    private bool isDeleting;
     
     private NoteData Data;
 
@@ -327,10 +331,14 @@ public MainWindow(
 
     ApplyDataToWindow();
 
+    InitializeTextSaveTimer();
+
     ShowInTaskbar = false;
 
     Loaded += MainWindow_Loaded;
+
 }
+
 
 
 
@@ -760,7 +768,7 @@ private void DeleteButton_Click(
     // Նախ թարմացնում ենք Data-ն էկրանի իրական վիճակից
     // -----------------------------------------------------
 
-    SaveCurrentState();
+    UpdateDataFromWindow();
 
 
     // -----------------------------------------------------
@@ -785,6 +793,12 @@ private void DeleteButton_Click(
 
     store.Notes.Remove(
         Data.Id);
+
+    // Միայն հիմա ենք գրում պահոցը, որպեսզի ֆայլում
+    // թերթիկն այլեւս գործող Notes-ում չմնա։
+    isDeleting = true;
+
+    DnoteStorage.Save(store);
 
 
     // -----------------------------------------------------
@@ -812,7 +826,7 @@ private void DeleteButton_Click(
 }
 
 
-        private void CloseMenu_Click(
+private void CloseMenu_Click(
     object sender,
     RoutedEventArgs e)
 {
@@ -821,6 +835,22 @@ private void DeleteButton_Click(
     SaveCurrentState();
 
     Close();
+}
+
+
+protected override void OnClosing(
+    System.ComponentModel.CancelEventArgs e)
+{
+    // Սա ներառում է նաեւ ծրագրային Close()-ը (օր.՝
+    // «Փակել բոլոր թերթիկները»)։ Ջնջման դեպքում տվյալն
+    // արդեն հեռացվել ու պահպանվել է DeleteButton_Click-ում։
+    if (!isDeleting)
+    {
+        Data.IsClosed = true;
+        SaveCurrentState();
+    }
+
+    base.OnClosing(e);
 }
 
 private void ExportExcel_Click(

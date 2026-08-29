@@ -93,28 +93,23 @@ public partial class App : Application
                         .ToArray();
 
 
-                // Եթե թերթիկներ արդեն բաց են՝
-                // պարզապես բերում ենք առաջ
-
-                if (openNotes.Length > 0)
-                {
-                    foreach (MainWindow note in openNotes)
-                    {
-                        note.Show();
-                        note.Activate();
-                    }
-
-                    return;
-                }
-
-
-                // Եթե բաց թերթիկներ չկան՝
-                // վերականգնում ենք պահպանվածները
+                // Բացում ենք բոլոր գործող թերթիկները,
+                // ներառյալ ×-ով փակվածները։
 
                 foreach (NoteData data in Store.Notes.Values)
                 {
-                    if (data.IsClosed)
+                    MainWindow? openNote =
+                        openNotes.FirstOrDefault(
+                            note => note.NoteId == data.Id);
+
+                    if (openNote != null)
+                    {
+                        openNote.Show();
+                        openNote.Activate();
                         continue;
+                    }
+
+                    data.IsClosed = false;
 
                     MainWindow note =
                         new MainWindow(data);
@@ -122,6 +117,8 @@ public partial class App : Application
                     note.ShowInTaskbar = false;
                     note.Show();
                 }
+
+                DnoteStorage.Save(Store);
             };
 
 
@@ -244,14 +241,15 @@ searchItem.Click +=
 
 foreach (NoteData data in Store.Notes.Values)
 {
-    if (data.IsClosed)
-        continue;
+    // Բացելուց առաջ ապահովության համար նշում ենք, որ բաց է
+    data.IsClosed = false;
 
     MainWindow note =
         new MainWindow(data);
 
     note.ShowInTaskbar = false;
     note.Show();
+    note.Activate();
 }
 
 

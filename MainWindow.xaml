@@ -517,6 +517,7 @@
 
         <!-- Տողամիջոց -->
         <Button Content="↕"
+                Margin="0,-3,0,0"
                 Width="16"
                 Height="16"
                 FontSize="14"
