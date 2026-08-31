@@ -9,6 +9,7 @@ using System.Windows.Threading;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using Forms = System.Windows.Forms;
 
 
 namespace DesktopNotes
@@ -297,29 +298,45 @@ private void NoteText_PreviewMouseLeftButtonUp(
 
 private void InitializeNoteVisuals()
 {
-    Note.Width =
-        ((App)Application.Current).Store.NoteWidth;
+    NoteStore currentStore = ((App)Application.Current).Store;
 
-    Note.Height =
-        ((App)Application.Current).Store.NoteHeight;
+    Data.Width = currentStore.NoteWidth;
+    Data.Height = currentStore.NoteHeight;
+    Data.NoteColor = currentStore.NoteColor;
+    Data.TextColor = currentStore.TextColor;
+    Data.FontFamily = currentStore.FontFamily;
+    Data.FontSize = currentStore.FontSize;
+    Data.IsBold = currentStore.IsBold;
+    Data.IsItalic = currentStore.IsItalic;
 
+    Note.Width = Data.Width;
+    Note.Height = Data.Height;
     NoteRotation.Angle = 0;
 
-    NoteText.FontFamily =
-        new FontFamily("Comic Sans MS");
+    Note.Background =
+        new SolidColorBrush(
+            (Color)ColorConverter.ConvertFromString(
+                Data.NoteColor));
 
-    NoteText.FontSize = 14;
+    NoteText.FontFamily =
+        new FontFamily(Data.FontFamily);
+
+    NoteText.FontSize = Data.FontSize;
 
     NoteText.FontWeight =
-        FontWeights.Normal;
+        Data.IsBold ? FontWeights.Bold : FontWeights.Normal;
 
     NoteText.FontStyle =
-        FontStyles.Normal;
+        Data.IsItalic ? FontStyles.Italic : FontStyles.Normal;
+
+    NoteText.Foreground =
+        new SolidColorBrush(
+            (Color)ColorConverter.ConvertFromString(
+                Data.TextColor));
 
     NoteText.Document.Blocks.Clear();
-
-NoteText.Document.Blocks.Add(
-    new Paragraph());
+    NoteText.Document.Blocks.Add(
+        new Paragraph());
 }
 
 public MainWindow(
@@ -455,48 +472,41 @@ private void SaveCurrentState()
 // ԹԵՐԹԻԿՆԵՐԻ ԸՆԴՀԱՆՈՒՐ ՉԱՓ
 // =========================================================
 
-private void ApplyNoteSize(
+private void SetCurrentNoteSize(
     double width,
     double height)
 {
-    // -----------------------------------------------------
-    // Պահում ենք նոր ընդհանուր չափը
-    // -----------------------------------------------------
+    Data.Width = width;
+    Data.Height = height;
 
-    NoteStore store =
-        ((App)Application.Current).Store;
+    Note.Width = width;
+    Note.Height = height;
 
-    store.NoteWidth = width;
-    store.NoteHeight = height;
+    UpdateWindowSizeForRotation(false);
+    UpdateDataFromWindow();
 
-
-    // -----------------------------------------------------
-    // Չափափոխում ենք բոլոր բաց թերթիկները
-    // -----------------------------------------------------
-
-    foreach (Window window in
-             Application.Current.Windows)
-    {
-        if (window is MainWindow noteWindow)
-        {
-            noteWindow.Note.Width = width;
-            noteWindow.Note.Height = height;
-
-            noteWindow.UpdateWindowSizeForRotation(false);
-
-            noteWindow.UpdateDataFromWindow();
-        }
-    }
-
-    DnoteStorage.Save(store);
-
+    DnoteStorage.Save(((App)Application.Current).Store);
 }
 
 private void Size150x220_Click(
     object sender,
     RoutedEventArgs e)
 {
-    ApplyNoteSize(150, 220);
+    SetCurrentNoteSize(150, 220);
+}
+
+private void Size300x220_Click(
+    object sender,
+    RoutedEventArgs e)
+{
+    SetCurrentNoteSize(300, 220);
+}
+
+private void Size150x450_Click(
+    object sender,
+    RoutedEventArgs e)
+{
+    SetCurrentNoteSize(150, 450);
 }
 
         // =========================================================
@@ -510,6 +520,13 @@ private void Size150x220_Click(
             Loaded -= MainWindow_Loaded;
 
             UpdateWindowSizeForRotation(false);
+            UpdateResizeGripState();
+        }
+
+        public void UpdateResizeGripState()
+        {
+            bool allow = ((App)Application.Current).Store.AllowFreeResize;
+            ResizeGrip.Visibility = allow ? Visibility.Visible : Visibility.Collapsed;
         }
 
 
@@ -1288,7 +1305,8 @@ private void ExportExcel_Click(
             {
                 if (current == NoteText ||
                     current == CloseButton ||
-                    current == MoveArea)
+                    current == MoveArea ||
+                    current == ResizeGrip)
                 {
                     return true;
                 }
@@ -1439,6 +1457,60 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
 
             SaveCurrentState();
 
+            e.Handled = true;
+        }
+
+
+        // =========================================================
+        // ԱԶԱՏ ՉԱՓԱՓՈԽՈՒՄ (RESIZE)
+        // =========================================================
+
+        private bool isResizing = false;
+
+        private void ResizeGrip_MouseLeftButtonDown(
+            object sender,
+            MouseButtonEventArgs e)
+        {
+            if (!((App)Application.Current).Store.AllowFreeResize)
+                return;
+
+            isResizing = true;
+            ResizeGrip.CaptureMouse();
+            e.Handled = true;
+        }
+
+        private void ResizeGrip_MouseMove(
+            object sender,
+            MouseEventArgs e)
+        {
+            if (!isResizing)
+                return;
+
+            Point currentPos = e.GetPosition(Note);
+            double newWidth = Math.Max(80, currentPos.X);
+            double newHeight = Math.Max(80, currentPos.Y);
+
+            Note.Width = newWidth;
+            Note.Height = newHeight;
+            Data.Width = newWidth;
+            Data.Height = newHeight;
+
+            UpdateWindowSizeForRotation(false);
+            e.Handled = true;
+        }
+
+        private void ResizeGrip_MouseLeftButtonUp(
+            object sender,
+            MouseButtonEventArgs e)
+        {
+            if (!isResizing)
+                return;
+
+            isResizing = false;
+            ResizeGrip.ReleaseMouseCapture();
+
+            UpdateDataFromWindow();
+            DnoteStorage.Save(((App)Application.Current).Store);
             e.Handled = true;
         }
 
@@ -1606,30 +1678,68 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
 
 
         // =========================================================
-        // ՏԱՌԱՏԵՍԱԿ
+        // ՏԱՌԱՏԵՍԱԿ (ԹԵՐԹԻԿԻ ՏԵՂԱՅԻՆ ՑԱՆԿ)
         // =========================================================
 
-        private void FontArial_Click(
-            object sender,
-            RoutedEventArgs e)
+        private void SetCurrentNoteFont(string fontName)
         {
-            ApplyFontFamily("Arial");
+            if (!NoteText.Selection.IsEmpty)
+            {
+                NoteText.Selection.ApplyPropertyValue(
+                    TextElement.FontFamilyProperty,
+                    new FontFamily(fontName));
+            }
+            else
+            {
+                Data.FontFamily = fontName;
+                NoteText.FontFamily = new FontFamily(fontName);
+            }
+
+            UpdateDataFromWindow();
+            DnoteStorage.Save(((App)Application.Current).Store);
+            NoteText.Focus();
         }
 
-
-        private void FontTimes_Click(
-            object sender,
-            RoutedEventArgs e)
+        private void FontComicSans_Click(object sender, RoutedEventArgs e) => SetCurrentNoteFont("Comic Sans MS");
+        private void FontCalibri_Click(object sender, RoutedEventArgs e) => SetCurrentNoteFont("Calibri");
+        private void FontCourier_Click(object sender, RoutedEventArgs e) => SetCurrentNoteFont("Courier New");
+        private void FontArial_Click(object sender, RoutedEventArgs e) => SetCurrentNoteFont("Arial");
+        private void FontTimes_Click(object sender, RoutedEventArgs e) => SetCurrentNoteFont("Times New Roman");
+        private void FontCustom_Click(object sender, RoutedEventArgs e)
         {
-            ApplyFontFamily("Times New Roman");
+            Forms.FontDialog dialog = new Forms.FontDialog();
+            if (dialog.ShowDialog() == Forms.DialogResult.OK)
+            {
+                SetCurrentNoteFont(dialog.Font.FontFamily.Name);
+            }
         }
 
+        // =========================================================
+        // ԹԵՐԹԻԿԻ ԳՈՒՅՆ (ԹԵՐԹԻԿԻ ՏԵՂԱՅԻՆ ՑԱՆԿ)
+        // =========================================================
 
-        private void FontCourier_Click(
-            object sender,
-            RoutedEventArgs e)
+        private void SetCurrentNoteColor(string hex)
         {
-            ApplyFontFamily("Courier New");
+            Data.NoteColor = hex;
+            Note.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
+            UpdateDataFromWindow();
+            DnoteStorage.Save(((App)Application.Current).Store);
+        }
+
+        private void NoteColorYellow_Click(object sender, RoutedEventArgs e) => SetCurrentNoteColor("#FFF59D");
+        private void NoteColorGreen_Click(object sender, RoutedEventArgs e) => SetCurrentNoteColor("#C8E6C9");
+        private void NoteColorBlue_Click(object sender, RoutedEventArgs e) => SetCurrentNoteColor("#BBDEFB");
+        private void NoteColorPink_Click(object sender, RoutedEventArgs e) => SetCurrentNoteColor("#F8BBD0");
+        private void NoteColorPurple_Click(object sender, RoutedEventArgs e) => SetCurrentNoteColor("#E1BEE7");
+        private void NoteColorWhite_Click(object sender, RoutedEventArgs e) => SetCurrentNoteColor("#FFFFFF");
+        private void NoteColorCustom_Click(object sender, RoutedEventArgs e)
+        {
+            Forms.ColorDialog dialog = new Forms.ColorDialog { FullOpen = true };
+            if (dialog.ShowDialog() == Forms.DialogResult.OK)
+            {
+                string hex = string.Format("#{0:X2}{1:X2}{2:X2}", dialog.Color.R, dialog.Color.G, dialog.Color.B);
+                SetCurrentNoteColor(hex);
+            }
         }
 
 

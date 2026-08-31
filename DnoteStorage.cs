@@ -52,6 +52,45 @@ namespace DesktopNotes
                     NoteHeight =
                         store.NoteHeight,
 
+                    NoteColor =
+                        store.NoteColor,
+
+                    TextColor =
+                        store.TextColor,
+
+                    FontFamily =
+                        store.FontFamily,
+
+                    FontSize =
+                        store.FontSize,
+
+                    IsBold =
+                        store.IsBold,
+
+                    IsItalic =
+                        store.IsItalic,
+
+                    PencilColor =
+                        store.PencilColor,
+
+                    PencilThickness =
+                        store.PencilThickness,
+
+                    AllowFreeResize =
+                        store.AllowFreeResize,
+
+                    CustomSizes =
+                        store.CustomSizes,
+
+                    CustomNoteColors =
+                        store.CustomNoteColors,
+
+                    CustomTextColors =
+                        store.CustomTextColors,
+
+                    CustomPencilColors =
+                        store.CustomPencilColors,
+
                     Notes =
                         store.Notes.Values.ToList(),
 
@@ -108,14 +147,49 @@ namespace DesktopNotes
 
 
             // -------------------------------------------------
-            // Ընդհանուր չափերը
+            // Ընդհանուր չափերը եւ նախընտրանքները
             // -------------------------------------------------
 
             store.NoteWidth =
-                file.NoteWidth;
+                file.NoteWidth > 0 ? file.NoteWidth : 150;
 
             store.NoteHeight =
-                file.NoteHeight;
+                file.NoteHeight > 0 ? file.NoteHeight : 220;
+
+            if (!string.IsNullOrEmpty(file.NoteColor))
+                store.NoteColor = file.NoteColor;
+
+            if (!string.IsNullOrEmpty(file.TextColor))
+                store.TextColor = file.TextColor;
+
+            if (!string.IsNullOrEmpty(file.FontFamily))
+                store.FontFamily = file.FontFamily;
+
+            if (file.FontSize > 0)
+                store.FontSize = file.FontSize;
+
+            store.IsBold = file.IsBold;
+            store.IsItalic = file.IsItalic;
+
+            if (!string.IsNullOrEmpty(file.PencilColor))
+                store.PencilColor = file.PencilColor;
+
+            if (file.PencilThickness > 0)
+                store.PencilThickness = file.PencilThickness;
+
+            store.AllowFreeResize = file.AllowFreeResize;
+
+            if (file.CustomSizes != null)
+                store.CustomSizes = file.CustomSizes;
+
+            if (file.CustomNoteColors != null)
+                store.CustomNoteColors = file.CustomNoteColors;
+
+            if (file.CustomTextColors != null)
+                store.CustomTextColors = file.CustomTextColors;
+
+            if (file.CustomPencilColors != null)
+                store.CustomPencilColors = file.CustomPencilColors;
 
 
             // -------------------------------------------------

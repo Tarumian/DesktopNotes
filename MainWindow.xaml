@@ -1,4 +1,4 @@
-﻿<Window x:Class="DesktopNotes.MainWindow"
+<Window x:Class="DesktopNotes.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Desktop Note"
@@ -33,60 +33,43 @@
 <Separator/>
 
                 <MenuItem Header="Տառատեսակ">
+                    <MenuItem Header="Comic Sans MS"
+                              Click="FontComicSans_Click"/>
+                    <MenuItem Header="Calibri"
+                              Click="FontCalibri_Click"/>
+                    <MenuItem Header="Courier New"
+                              Click="FontCourier_Click"/>
                     <MenuItem Header="Arial"
                               Click="FontArial_Click"/>
                     <MenuItem Header="Times New Roman"
                               Click="FontTimes_Click"/>
-                    <MenuItem Header="Courier New"
-                              Click="FontCourier_Click"/>
+                    <MenuItem Header="Այլ..."
+                              Click="FontCustom_Click"/>
                 </MenuItem>
-
-                <MenuItem Header="Կետաչափ">
-                    <MenuItem Header="14"
-                              Click="FontSize14_Click"/>
-                    <MenuItem Header="16"
-                              Click="FontSize16_Click"/>
-                    <MenuItem Header="18"
-                              Click="FontSize18_Click"/>
-                    <MenuItem Header="20"
-                              Click="FontSize20_Click"/>
-                    <MenuItem Header="24"
-                              Click="FontSize24_Click"/>
-                    <MenuItem Header="28"
-                              Click="FontSize28_Click"/>
-                </MenuItem>
-
-                <MenuItem Header="Ոճ">
-                    <MenuItem Header="Թավ"
-                              Click="Bold_Click"/>
-                    <MenuItem Header="Շեղ"
-                              Click="Italic_Click"/>
-                    <MenuItem Header="Թավ շեղ"
-                              Click="BoldItalic_Click"/>
-                    <MenuItem Header="Սովորական"
-                              Click="Normal_Click"/>
-                </MenuItem>
-
-                <MenuItem Header="Տեքստի գույն">
-                    <MenuItem Header="Սեւ"
-                              Click="TextBlack_Click"/>
-                    <MenuItem Header="Մուգ մոխրագույն"
-                              Click="TextDarkGray_Click"/>
-                    <MenuItem Header="Կարմիր"
-                              Click="TextRed_Click"/>
-                    <MenuItem Header="Կապույտ"
-                              Click="TextBlue_Click"/>
+                <MenuItem Header="Թերթիկի գույն">
+                    <MenuItem Header="Դեղին"
+                              Click="NoteColorYellow_Click"/>
                     <MenuItem Header="Կանաչ"
-                              Click="TextGreen_Click"/>
-                    <MenuItem Header="Շագանակագույն"
-                              Click="TextBrown_Click"/>
+                              Click="NoteColorGreen_Click"/>
+                    <MenuItem Header="Կապույտ"
+                              Click="NoteColorBlue_Click"/>
+                    <MenuItem Header="Վարդագույն"
+                              Click="NoteColorPink_Click"/>
+                    <MenuItem Header="Մանուշակագույն"
+                              Click="NoteColorPurple_Click"/>
+                    <MenuItem Header="Սպիտակ"
+                              Click="NoteColorWhite_Click"/>
+                    <MenuItem Header="Այլ..."
+                              Click="NoteColorCustom_Click"/>
                 </MenuItem>
 
                 <MenuItem Header="Չափ">
                     <MenuItem Header="150 × 220"
                               Click="Size150x220_Click"/>
-                    <MenuItem Header="300 × 220"/>
-                    <MenuItem Header="150 × 450"/>
+                    <MenuItem Header="300 × 220"
+                              Click="Size300x220_Click"/>
+                    <MenuItem Header="150 × 450"
+                              Click="Size150x450_Click"/>
                 </MenuItem>
 
                 <Separator/>
@@ -117,8 +100,7 @@
                 VerticalAlignment="Center"
                 Background="#FFF59D"
                 CornerRadius="3"
-                BorderBrush="#D8C95A"
-                BorderThickness="1"
+                BorderThickness="0"
 
                 MouseEnter="Note_MouseEnter"
                 MouseLeave="Note_MouseLeave"
@@ -516,72 +498,135 @@
             </Border>
         </Popup>
 
-        <!-- Տողամիջոց -->
-        <Button Content="↕"
-                Margin="0,-3,0,0"
-                Width="16"
-                Height="16"
-                FontSize="14"
-                Background="Transparent"
-                BorderThickness="0"
-                Padding="0"
-                FocusVisualStyle="{x:Null}"
-                MouseEnter="QuickButton_MouseEnter"
-                MouseLeave="QuickButton_MouseLeave">
-            <Button.Template>
-                <ControlTemplate TargetType="Button">
-                    <Grid>
+        <!-- 1. ՏԱՌԱՉԱՓ -->
+        <StackPanel Orientation="Horizontal"
+                    Margin="3,0,0,0"
+                    VerticalAlignment="Center"
+                    ToolTip="Տառաչափ">
+            <TextBlock Text="A"
+                       FontSize="11"
+                       FontWeight="Bold"
+                       Foreground="#555555"
+                       VerticalAlignment="Center"
+                       Margin="0,0,1,0"/>
+            <StackPanel Orientation="Vertical"
+                        VerticalAlignment="Center">
+                <Button x:Name="QuickFontSizeIncreaseButton"
+                        Width="12"
+                        Height="10"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        Foreground="#555555"
+                        FontSize="7"
+                        FocusVisualStyle="{x:Null}"
+                        Content="▲"
+                        ToolTip="Մեծացնել տառաչափը"
+                        Click="QuickFontSizeIncrease_Click"
+                        MouseEnter="QuickButton_MouseEnter"
+                        MouseLeave="QuickButton_MouseLeave"/>
+                <Button x:Name="QuickFontSizeDecreaseButton"
+                        Width="12"
+                        Height="10"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        Foreground="#555555"
+                        FontSize="7"
+                        FocusVisualStyle="{x:Null}"
+                        Content="▼"
+                        ToolTip="Փոքրացնել տառաչափը"
+                        Click="QuickFontSizeDecrease_Click"
+                        MouseEnter="QuickButton_MouseEnter"
+                        MouseLeave="QuickButton_MouseLeave"/>
+            </StackPanel>
+        </StackPanel>
 
-                        <!-- Միայն hover-ի քառակուսին՝ 2 px ներքեւ -->
-                        <Border Background="{TemplateBinding Background}"
-                                CornerRadius="5">
-                            <Border.RenderTransform>
-                                <TranslateTransform Y="2"/>
-                            </Border.RenderTransform>
-                        </Border>
+        <!-- 2. ՏՈՂԱՄԻՋՅԱՆ ՀԵՌԱՎՈՐՈՒԹՅՈՒՆ -->
+        <StackPanel Orientation="Horizontal"
+                    Margin="3,0,0,0"
+                    VerticalAlignment="Center"
+                    ToolTip="Տողամիջյան հեռավորություն">
+            <TextBlock Text="↕"
+                       FontSize="12"
+                       Foreground="#555555"
+                       VerticalAlignment="Center"
+                       Margin="0,-2,1,0"/>
+            <StackPanel Orientation="Vertical"
+                        VerticalAlignment="Center">
+                <Button x:Name="QuickLineSpacingIncreaseButton"
+                        Width="12"
+                        Height="10"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        Foreground="#555555"
+                        FontSize="7"
+                        FocusVisualStyle="{x:Null}"
+                        Content="▲"
+                        ToolTip="Մեծացնել տողամիջոցը"
+                        Click="QuickLineSpacingIncrease_Click"
+                        MouseEnter="QuickButton_MouseEnter"
+                        MouseLeave="QuickButton_MouseLeave"/>
+                <Button x:Name="QuickLineSpacingDecreaseButton"
+                        Width="12"
+                        Height="10"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        Foreground="#555555"
+                        FontSize="7"
+                        FocusVisualStyle="{x:Null}"
+                        Content="▼"
+                        ToolTip="Փոքրացնել տողամիջոցը"
+                        Click="QuickLineSpacingDecrease_Click"
+                        MouseEnter="QuickButton_MouseEnter"
+                        MouseLeave="QuickButton_MouseLeave"/>
+            </StackPanel>
+        </StackPanel>
 
-                        <!-- B-ն չի շարժվում -->
-                        <ContentPresenter
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"/>
-
-                    </Grid>
-                </ControlTemplate>
-            </Button.Template>
-        </Button>
-
-        <!-- Պարբերություն -->
-        <Button Content="¶"
-                Width="16"
-                Height="16"
-                FontSize="14"
-                Background="Transparent"
-                BorderThickness="0"
-                Padding="0"
-                FocusVisualStyle="{x:Null}"
-                MouseEnter="QuickButton_MouseEnter"
-                MouseLeave="QuickButton_MouseLeave">
-            <Button.Template>
-                <ControlTemplate TargetType="Button">
-                    <Grid>
-
-                        <!-- Միայն hover-ի քառակուսին՝ 2 px ներքեւ -->
-                        <Border Background="{TemplateBinding Background}"
-                                CornerRadius="5">
-                            <Border.RenderTransform>
-                                <TranslateTransform Y="2"/>
-                            </Border.RenderTransform>
-                        </Border>
-
-                        <!-- B-ն չի շարժվում -->
-                        <ContentPresenter
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"/>
-
-                    </Grid>
-                </ControlTemplate>
-            </Button.Template>
-        </Button>
+        <!-- 3. ՊԱՐԲԵՐՈՒԹՅՈՒՆՆԵՐԻ ՀԵՌԱՎՈՐՈՒԹՅՈՒՆ -->
+        <StackPanel Orientation="Horizontal"
+                    Margin="3,0,0,0"
+                    VerticalAlignment="Center"
+                    ToolTip="Պարբերությունների հեռավորություն">
+            <TextBlock Text="¶"
+                       FontSize="11"
+                       Foreground="#555555"
+                       VerticalAlignment="Center"
+                       Margin="0,0,1,0"/>
+            <StackPanel Orientation="Vertical"
+                        VerticalAlignment="Center">
+                <Button x:Name="QuickParagraphSpacingIncreaseButton"
+                        Width="12"
+                        Height="10"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        Foreground="#555555"
+                        FontSize="7"
+                        FocusVisualStyle="{x:Null}"
+                        Content="▲"
+                        ToolTip="Մեծացնել պարբերությունների հեռավորությունը"
+                        Click="QuickParagraphSpacingIncrease_Click"
+                        MouseEnter="QuickButton_MouseEnter"
+                        MouseLeave="QuickButton_MouseLeave"/>
+                <Button x:Name="QuickParagraphSpacingDecreaseButton"
+                        Width="12"
+                        Height="10"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        Foreground="#555555"
+                        FontSize="7"
+                        FocusVisualStyle="{x:Null}"
+                        Content="▼"
+                        ToolTip="Փոքրացնել պարբերությունների հեռավորությունը"
+                        Click="QuickParagraphSpacingDecrease_Click"
+                        MouseEnter="QuickButton_MouseEnter"
+                        MouseLeave="QuickButton_MouseLeave"/>
+            </StackPanel>
+        </StackPanel>
 
     </StackPanel>
 </Border>
@@ -680,6 +725,30 @@
                     </Button.Style>
 
                 </Button>
+
+                <!-- ================================================= -->
+                <!-- ԱԶԱՏ ՉԱՓԱՓՈԽՄԱՆ ԱՆԿՅՈՒՆ (RESIZE GRIP) -->
+                <!-- ================================================= -->
+                <Border x:Name="ResizeGrip"
+                        Width="14"
+                        Height="14"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom"
+                        Background="Transparent"
+                        Cursor="SizeNWSE"
+                        Visibility="Collapsed"
+                        MouseLeftButtonDown="ResizeGrip_MouseLeftButtonDown"
+                        MouseMove="ResizeGrip_MouseMove"
+                        MouseLeftButtonUp="ResizeGrip_MouseLeftButtonUp"
+                        ToolTip="Փոխել չափը">
+                    <Path Data="M 11 14 L 14 11 M 7 14 L 14 7 M 3 14 L 14 3"
+                          Stroke="#888888"
+                          StrokeThickness="1"
+                          Opacity="0.5"
+                          HorizontalAlignment="Right"
+                          VerticalAlignment="Bottom"
+                          Margin="0,0,2,2"/>
+                </Border>
 
             </Grid>
 

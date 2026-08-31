@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -221,5 +223,152 @@ public partial class MainWindow
     private static Color ColorFromHex(string hex)
     {
         return (Color)ColorConverter.ConvertFromString(hex);
+    }
+
+    // =========================================================
+    // ՏԱՌԱՉԱՓ (+ / -)
+    // =========================================================
+
+    private void QuickFontSizeIncrease_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        AdjustFontSize(1);
+    }
+
+    private void QuickFontSizeDecrease_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        AdjustFontSize(-1);
+    }
+
+    private void AdjustFontSize(double delta)
+    {
+        if (!NoteText.Selection.IsEmpty)
+        {
+            object val = NoteText.Selection.GetPropertyValue(TextElement.FontSizeProperty);
+            double current = (val is double d) ? d : NoteText.FontSize;
+            double next = Math.Clamp(current + delta, 6, 96);
+            NoteText.Selection.ApplyPropertyValue(TextElement.FontSizeProperty, next);
+        }
+        else
+        {
+            NoteText.FontSize = Math.Clamp(NoteText.FontSize + delta, 6, 96);
+        }
+
+        UpdateDataFromWindow();
+        DnoteStorage.Save(((App)Application.Current).Store);
+        NoteText.Focus();
+    }
+
+    // =========================================================
+    // ՏՈՂԱՄԻՋՅԱՆ ՀԵՌԱՎՈՐՈՒԹՅՈՒՆ (+ / -)
+    // =========================================================
+
+    private void QuickLineSpacingIncrease_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        AdjustLineSpacing(2);
+    }
+
+    private void QuickLineSpacingDecrease_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        AdjustLineSpacing(-2);
+    }
+
+    private void AdjustLineSpacing(double delta)
+    {
+        List<Paragraph> targetParagraphs = GetTargetParagraphs();
+        foreach (Paragraph p in targetParagraphs)
+        {
+            double current = double.IsNaN(p.LineHeight) || p.LineHeight <= 0 ? (p.FontSize * 1.2) : p.LineHeight;
+            p.LineStackingStrategy = LineStackingStrategy.BlockLineHeight;
+            p.LineHeight = Math.Clamp(current + delta, 8, 120);
+        }
+
+        UpdateDataFromWindow();
+        DnoteStorage.Save(((App)Application.Current).Store);
+        NoteText.Focus();
+    }
+
+    // =========================================================
+    // ՊԱՐԲԵՐՈՒԹՅՈՒՆՆԵՐԻ ՀԵՌԱՎՈՐՈՒԹՅՈՒՆ (+ / -)
+    // =========================================================
+
+    private void QuickParagraphSpacingIncrease_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        AdjustParagraphSpacing(2);
+    }
+
+    private void QuickParagraphSpacingDecrease_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        AdjustParagraphSpacing(-2);
+    }
+
+    private void AdjustParagraphSpacing(double delta)
+    {
+        List<Paragraph> targetParagraphs = GetTargetParagraphs();
+        foreach (Paragraph p in targetParagraphs)
+        {
+            double currentBottom = p.Margin.Bottom;
+            double nextBottom = Math.Clamp(currentBottom + delta, 0, 60);
+            p.Margin = new Thickness(p.Margin.Left, p.Margin.Top, p.Margin.Right, nextBottom);
+        }
+
+        UpdateDataFromWindow();
+        DnoteStorage.Save(((App)Application.Current).Store);
+        NoteText.Focus();
+    }
+
+    private System.Collections.Generic.List<Paragraph> GetTargetParagraphs()
+    {
+        System.Collections.Generic.List<Paragraph> list = new();
+        if (!NoteText.Selection.IsEmpty)
+        {
+            TextPointer start = NoteText.Selection.Start;
+            TextPointer end = NoteText.Selection.End;
+
+            Paragraph? p1 = start.Paragraph;
+            Paragraph? p2 = end.Paragraph;
+
+            if (p1 != null && p2 != null)
+            {
+                Block? cur = p1;
+                while (cur != null)
+                {
+                    if (cur is Paragraph para)
+                    {
+                        list.Add(para);
+                    }
+                    if (cur == p2) break;
+                    cur = cur.NextBlock;
+                }
+            }
+        }
+
+        if (list.Count == 0)
+        {
+            Paragraph? curPara = NoteText.CaretPosition.Paragraph;
+            if (curPara != null)
+            {
+                list.Add(curPara);
+            }
+            else
+            {
+                foreach (Block b in NoteText.Document.Blocks)
+                {
+                    if (b is Paragraph p) list.Add(p);
+                }
+            }
+        }
+        return list;
     }
 }

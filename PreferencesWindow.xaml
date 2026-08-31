@@ -3,11 +3,38 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Նախընտրություններ"
         Width="720"
-        Height="560"
-        MinWidth="600"
-        MinHeight="480"
+        Height="620"
+        MinWidth="640"
+        MinHeight="520"
         WindowStartupLocation="CenterScreen"
         Background="#F5F5F5">
+
+    <Window.Resources>
+        <!-- Փոքր հեռացման կոճակի ոճ -->
+        <Style x:Key="SmallRemoveButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="Margin" Value="6,0,0,0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#888888"/>
+            <Setter Property="Background" Value="#F0F0F0"/>
+            <Setter Property="BorderBrush" Value="#D0D0D0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="ToolTip" Value="Հեռացնել ցանկից"/>
+        </Style>
+
+        <!-- Գույնի ընտրության կոճակի ոճ -->
+        <Style x:Key="ColorPickerButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="Padding" Value="6,0"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#D0D0D0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </Window.Resources>
 
     <Grid Margin="18">
 
@@ -42,8 +69,9 @@
                                Foreground="#333333"
                                Margin="0,0,0,10"/>
 
-                    <Grid Margin="0,0,0,18">
+                    <Grid Margin="0,0,0,16">
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
@@ -61,18 +89,21 @@
                                    FontSize="12"
                                    VerticalAlignment="Center"/>
 
-                        <ComboBox Grid.Row="0"
-                                  Grid.Column="1"
-                                  Width="200"
-                                  Height="26"
-                                  FontSize="12"
-                                  HorizontalAlignment="Left"
-                                  SelectedIndex="0">
-                            <ComboBoxItem Content="150 × 220"/>
-                            <ComboBoxItem Content="300 × 220"/>
-                            <ComboBoxItem Content="150 × 450"/>
-                            <ComboBoxItem Content="Այլ..."/>
-                        </ComboBox>
+                        <StackPanel Grid.Row="0"
+                                    Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <ComboBox x:Name="NoteSizeComboBox"
+                                      Width="190"
+                                      Height="26"
+                                      FontSize="12"
+                                      HorizontalAlignment="Left"
+                                      SelectionChanged="NoteSizeComboBox_SelectionChanged"/>
+                            <Button x:Name="RemoveSizeButton"
+                                    Content="✕"
+                                    Style="{StaticResource SmallRemoveButtonStyle}"
+                                    Click="RemoveSizeButton_Click"/>
+                        </StackPanel>
 
                         <!-- Թերթիկի գույն -->
                         <TextBlock Grid.Row="1"
@@ -88,18 +119,16 @@
                                     VerticalAlignment="Center"
                                     Margin="0,10,0,0">
 
-                            <Border Width="14"
-                                    Height="14"
-                                    Background="#FFF59D"
-                                    BorderBrush="#D0D0D0"
-                                    BorderThickness="1"
-                                    CornerRadius="2"/>
+                            <ComboBox x:Name="NoteColorComboBox"
+                                      Width="190"
+                                      Height="26"
+                                      FontSize="12"
+                                      SelectionChanged="NoteColorComboBox_SelectionChanged"/>
 
-                            <TextBlock Text="#FFF59D"
-                                       FontSize="12"
-                                       Foreground="#444444"
-                                       VerticalAlignment="Center"
-                                       Margin="8,0,0,0"/>
+                            <Button x:Name="RemoveNoteColorButton"
+                                    Content="✕"
+                                    Style="{StaticResource SmallRemoveButtonStyle}"
+                                    Click="RemoveNoteColorButton_Click"/>
                         </StackPanel>
 
                         <!-- Տեքստի գույն -->
@@ -116,19 +145,25 @@
                                     VerticalAlignment="Center"
                                     Margin="0,10,0,0">
 
-                            <Border Width="14"
-                                    Height="14"
-                                    Background="#000000"
-                                    BorderBrush="#D0D0D0"
-                                    BorderThickness="1"
-                                    CornerRadius="2"/>
+                            <ComboBox x:Name="TextColorComboBox"
+                                      Width="190"
+                                      Height="26"
+                                      FontSize="12"
+                                      SelectionChanged="TextColorComboBox_SelectionChanged"/>
 
-                            <TextBlock Text="#000000"
-                                       FontSize="12"
-                                       Foreground="#444444"
-                                       VerticalAlignment="Center"
-                                       Margin="8,0,0,0"/>
+                            <Button x:Name="RemoveTextColorButton"
+                                    Content="✕"
+                                    Style="{StaticResource SmallRemoveButtonStyle}"
+                                    Click="RemoveTextColorButton_Click"/>
                         </StackPanel>
+
+                        <!-- Ազատ մեծացում -->
+                        <CheckBox x:Name="AllowFreeResizeCheckBox"
+                                  Grid.Row="3"
+                                  Grid.Column="1"
+                                  Content="Թույլատրել թերթիկի չափի ազատ փոփոխում անկյունից (Resize)"
+                                  FontSize="12"
+                                  Margin="0,12,0,0"/>
 
                     </Grid>
 
@@ -144,7 +179,7 @@
                                Foreground="#333333"
                                Margin="0,0,0,10"/>
 
-                    <Grid Margin="0,0,0,18">
+                    <Grid Margin="0,0,0,16">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
@@ -163,18 +198,14 @@
                                    FontSize="12"
                                    VerticalAlignment="Center"/>
 
-                        <ComboBox Grid.Row="0"
+                        <ComboBox x:Name="FontFamilyComboBox"
+                                  Grid.Row="0"
                                   Grid.Column="1"
-                                  Width="200"
+                                  Width="190"
                                   Height="26"
                                   FontSize="12"
                                   HorizontalAlignment="Left"
-                                  SelectedIndex="0">
-                            <ComboBoxItem Content="Comic Sans MS"/>
-                            <ComboBoxItem Content="Calibri"/>
-                            <ComboBoxItem Content="Courier New"/>
-                            <ComboBoxItem Content="Այլ..."/>
-                        </ComboBox>
+                                  SelectionChanged="FontFamilyComboBox_SelectionChanged"/>
 
                         <!-- Կետաչափ -->
                         <TextBlock Grid.Row="1"
@@ -184,7 +215,8 @@
                                    VerticalAlignment="Center"
                                    Margin="0,10,0,0"/>
 
-                        <TextBox Grid.Row="1"
+                        <TextBox x:Name="FontSizeTextBox"
+                                 Grid.Row="1"
                                  Grid.Column="1"
                                  Width="70"
                                  Height="26"
@@ -202,7 +234,8 @@
                                    VerticalAlignment="Center"
                                    Margin="0,10,0,0"/>
 
-                        <ComboBox Grid.Row="2"
+                        <ComboBox x:Name="FontStyleComboBox"
+                                  Grid.Row="2"
                                   Grid.Column="1"
                                   Width="130"
                                   Height="26"
@@ -213,6 +246,7 @@
                             <ComboBoxItem Content="Սովորական"/>
                             <ComboBoxItem Content="Թավ"/>
                             <ComboBoxItem Content="Շեղ"/>
+                            <ComboBoxItem Content="Թավ Շեղ"/>
                         </ComboBox>
 
                     </Grid>
@@ -229,7 +263,7 @@
                                Foreground="#333333"
                                Margin="0,0,0,10"/>
 
-                    <Grid Margin="0,0,0,18">
+                    <Grid Margin="0,0,0,16">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
@@ -252,18 +286,16 @@
                                     Orientation="Horizontal"
                                     VerticalAlignment="Center">
 
-                            <Border Width="14"
-                                    Height="14"
-                                    Background="#000000"
-                                    BorderBrush="#D0D0D0"
-                                    BorderThickness="1"
-                                    CornerRadius="2"/>
+                            <ComboBox x:Name="PencilColorComboBox"
+                                      Width="190"
+                                      Height="26"
+                                      FontSize="12"
+                                      SelectionChanged="PencilColorComboBox_SelectionChanged"/>
 
-                            <TextBlock Text="#000000"
-                                       FontSize="12"
-                                       Foreground="#444444"
-                                       VerticalAlignment="Center"
-                                       Margin="8,0,0,0"/>
+                            <Button x:Name="RemovePencilColorButton"
+                                    Content="✕"
+                                    Style="{StaticResource SmallRemoveButtonStyle}"
+                                    Click="RemovePencilColorButton_Click"/>
                         </StackPanel>
 
                         <!-- Հաստություն -->
@@ -274,7 +306,8 @@
                                    VerticalAlignment="Center"
                                    Margin="0,10,0,0"/>
 
-                        <TextBox Grid.Row="1"
+                        <TextBox x:Name="PencilThicknessTextBox"
+                                 Grid.Row="1"
                                  Grid.Column="1"
                                  Width="70"
                                  Height="26"
@@ -298,9 +331,16 @@
                                Foreground="#333333"
                                Margin="0,0,0,10"/>
 
-                    <CheckBox Content="Windows-ի գործարկման ժամանակ ավտոմատ գործարկել DesktopNotes-ը"
+                    <CheckBox x:Name="AutostartCheckBox"
+                              Content="Windows-ի գործարկման ժամանակ ավտոմատ գործարկել DesktopNotes-ը"
                               FontSize="12"
                               IsChecked="True"
+                              Margin="0,0,0,8"/>
+
+                    <CheckBox x:Name="ApplyToOpenNotesCheckBox"
+                              Content="Կիրառել նոր նախընտրանքները նաև արդեն բացված թերթիկների վրա"
+                              FontSize="12"
+                              IsChecked="False"
                               Margin="0,0,0,6"/>
 
                 </StackPanel>
