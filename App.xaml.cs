@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -32,16 +32,26 @@ public partial class App : Application
         // -------------------------------------------------
 
         trayIcon = new TaskbarIcon
-{
-    ToolTipText = "DesktopNotes",
-    Visibility = Visibility.Visible,
-    IconSource = new BitmapImage(
-        new Uri(
-            "pack://application:,,,/Assets/DesktopNotes.ico",
-            UriKind.Absolute))
-};
+        {
+            ToolTipText = "DesktopNotes",
+            Visibility = Visibility.Visible
+        };
 
-        trayIcon.ForceCreate();
+        try
+        {
+            var streamInfo = Application.GetResourceStream(
+                new Uri("pack://application:,,,/Assets/DesktopNotes.ico", UriKind.Absolute));
+            if (streamInfo != null)
+            {
+                using var stream = streamInfo.Stream;
+                trayIcon.Icon = new System.Drawing.Icon(stream);
+            }
+        }
+        catch
+        {
+            trayIcon.IconSource = new BitmapImage(
+                new Uri("pack://application:,,,/Assets/DesktopNotes.ico", UriKind.Absolute));
+        }
 
 
         // -------------------------------------------------
@@ -105,6 +115,7 @@ public partial class App : Application
                     if (openNote != null)
                     {
                         openNote.Show();
+                        openNote.WindowState = WindowState.Normal;
                         openNote.Activate();
                         continue;
                     }
@@ -116,6 +127,8 @@ public partial class App : Application
 
                     note.ShowInTaskbar = false;
                     note.Show();
+                    note.WindowState = WindowState.Normal;
+                    note.Activate();
                 }
 
                 DnoteStorage.Save(Store);
@@ -221,7 +234,40 @@ searchItem.Click +=
         searchWindow.Activate();
     };
 
+// -------------------------------------------------
+// Նախընտրություններ
+// -------------------------------------------------
+
+MenuItem preferencesItem =
+    new MenuItem
+    {
+        Header = "Նախընտրություններ"
+    };
+
+preferencesItem.Click +=
+    (sender, args) =>
+    {
+        PreferencesWindow[] prefWindows =
+            Application.Current.Windows
+                .OfType<PreferencesWindow>()
+                .ToArray();
+
+        if (prefWindows.Length > 0)
+        {
+            prefWindows[0].Show();
+            prefWindows[0].Activate();
+            return;
+        }
+
+        PreferencesWindow prefWindow =
+            new PreferencesWindow();
+
+        prefWindow.Show();
+        prefWindow.Activate();
+    };
+
         menu.Items.Add(searchItem);
+        menu.Items.Add(preferencesItem);
         menu.Items.Add(showAllItem);
         menu.Items.Add(closeAllItem);
         menu.Items.Add(startupItem);
@@ -233,6 +279,14 @@ searchItem.Click +=
 
 
         trayIcon.ContextMenu = menu;
+
+        try
+        {
+            trayIcon.ForceCreate();
+        }
+        catch
+        {
+        }
 
 
         // -------------------------------------------------

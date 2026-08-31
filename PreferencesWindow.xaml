@@ -1,0 +1,347 @@
+<Window x:Class="DesktopNotes.PreferencesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Նախընտրություններ"
+        Width="720"
+        Height="560"
+        MinWidth="600"
+        MinHeight="480"
+        WindowStartupLocation="CenterScreen"
+        Background="#F5F5F5">
+
+    <Grid Margin="18">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ================================================= -->
+        <!-- ՆԱԽԸՆՏՐՈՒԹՅՈՒՆՆԵՐԻ ՍՊԻՏԱԿ ԳՈՏԻ -->
+        <!-- ================================================= -->
+
+        <Border Grid.Row="0"
+                BorderBrush="#D0D0D0"
+                BorderThickness="1"
+                Background="White"
+                CornerRadius="3"
+                Padding="18,14">
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+
+                <StackPanel>
+
+                    <!-- ================================ -->
+                    <!-- 1. ԹԵՐԹԻԿ -->
+                    <!-- ================================ -->
+
+                    <TextBlock Text="Թերթիկ"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="#333333"
+                               Margin="0,0,0,10"/>
+
+                    <Grid Margin="0,0,0,18">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Չափ -->
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="0"
+                                   Text="Նոր թերթիկի չափ՝"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"/>
+
+                        <ComboBox Grid.Row="0"
+                                  Grid.Column="1"
+                                  Width="200"
+                                  Height="26"
+                                  FontSize="12"
+                                  HorizontalAlignment="Left"
+                                  SelectedIndex="0">
+                            <ComboBoxItem Content="150 × 220"/>
+                            <ComboBoxItem Content="300 × 220"/>
+                            <ComboBoxItem Content="150 × 450"/>
+                            <ComboBoxItem Content="Այլ..."/>
+                        </ComboBox>
+
+                        <!-- Թերթիկի գույն -->
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="0"
+                                   Text="Թերթիկի գույն՝"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"
+                                   Margin="0,10,0,0"/>
+
+                        <StackPanel Grid.Row="1"
+                                    Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center"
+                                    Margin="0,10,0,0">
+
+                            <Border Width="14"
+                                    Height="14"
+                                    Background="#FFF59D"
+                                    BorderBrush="#D0D0D0"
+                                    BorderThickness="1"
+                                    CornerRadius="2"/>
+
+                            <TextBlock Text="#FFF59D"
+                                       FontSize="12"
+                                       Foreground="#444444"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,0,0"/>
+                        </StackPanel>
+
+                        <!-- Տեքստի գույն -->
+                        <TextBlock Grid.Row="2"
+                                   Grid.Column="0"
+                                   Text="Տեքստի գույն՝"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"
+                                   Margin="0,10,0,0"/>
+
+                        <StackPanel Grid.Row="2"
+                                    Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center"
+                                    Margin="0,10,0,0">
+
+                            <Border Width="14"
+                                    Height="14"
+                                    Background="#000000"
+                                    BorderBrush="#D0D0D0"
+                                    BorderThickness="1"
+                                    CornerRadius="2"/>
+
+                            <TextBlock Text="#000000"
+                                       FontSize="12"
+                                       Foreground="#444444"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,0,0"/>
+                        </StackPanel>
+
+                    </Grid>
+
+                    <Separator Margin="0,0,0,14" Background="#EBEBEB"/>
+
+                    <!-- ================================ -->
+                    <!-- 2. ՏԱՌԱՏԵՍԱԿ -->
+                    <!-- ================================ -->
+
+                    <TextBlock Text="Տառատեսակ"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="#333333"
+                               Margin="0,0,0,10"/>
+
+                    <Grid Margin="0,0,0,18">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Ընտանիք -->
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="0"
+                                   Text="Տառատեսակի ընտանիք՝"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"/>
+
+                        <ComboBox Grid.Row="0"
+                                  Grid.Column="1"
+                                  Width="200"
+                                  Height="26"
+                                  FontSize="12"
+                                  HorizontalAlignment="Left"
+                                  SelectedIndex="0">
+                            <ComboBoxItem Content="Comic Sans MS"/>
+                            <ComboBoxItem Content="Calibri"/>
+                            <ComboBoxItem Content="Courier New"/>
+                            <ComboBoxItem Content="Այլ..."/>
+                        </ComboBox>
+
+                        <!-- Կետաչափ -->
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="0"
+                                   Text="Կետաչափ՝"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"
+                                   Margin="0,10,0,0"/>
+
+                        <TextBox Grid.Row="1"
+                                 Grid.Column="1"
+                                 Width="70"
+                                 Height="26"
+                                 FontSize="12"
+                                 Padding="6,2"
+                                 HorizontalAlignment="Left"
+                                 Text="14"
+                                 Margin="0,10,0,0"/>
+
+                        <!-- Ոճ -->
+                        <TextBlock Grid.Row="2"
+                                   Grid.Column="0"
+                                   Text="Սկզբնական ոճ՝"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"
+                                   Margin="0,10,0,0"/>
+
+                        <ComboBox Grid.Row="2"
+                                  Grid.Column="1"
+                                  Width="130"
+                                  Height="26"
+                                  FontSize="12"
+                                  HorizontalAlignment="Left"
+                                  SelectedIndex="0"
+                                  Margin="0,10,0,0">
+                            <ComboBoxItem Content="Սովորական"/>
+                            <ComboBoxItem Content="Թավ"/>
+                            <ComboBoxItem Content="Շեղ"/>
+                        </ComboBox>
+
+                    </Grid>
+
+                    <Separator Margin="0,0,0,14" Background="#EBEBEB"/>
+
+                    <!-- ================================ -->
+                    <!-- 3. ՄԱՏԻՏ -->
+                    <!-- ================================ -->
+
+                    <TextBlock Text="Մատիտ"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="#333333"
+                               Margin="0,0,0,10"/>
+
+                    <Grid Margin="0,0,0,18">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Գույն -->
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="0"
+                                   Text="Գույն՝"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"/>
+
+                        <StackPanel Grid.Row="0"
+                                    Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+
+                            <Border Width="14"
+                                    Height="14"
+                                    Background="#000000"
+                                    BorderBrush="#D0D0D0"
+                                    BorderThickness="1"
+                                    CornerRadius="2"/>
+
+                            <TextBlock Text="#000000"
+                                       FontSize="12"
+                                       Foreground="#444444"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,0,0"/>
+                        </StackPanel>
+
+                        <!-- Հաստություն -->
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="0"
+                                   Text="Հաստություն՝"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"
+                                   Margin="0,10,0,0"/>
+
+                        <TextBox Grid.Row="1"
+                                 Grid.Column="1"
+                                 Width="70"
+                                 Height="26"
+                                 FontSize="12"
+                                 Padding="6,2"
+                                 HorizontalAlignment="Left"
+                                 Text="2"
+                                 Margin="0,10,0,0"/>
+
+                    </Grid>
+
+                    <Separator Margin="0,0,0,14" Background="#EBEBEB"/>
+
+                    <!-- ================================ -->
+                    <!-- 4. ՎԱՐՔԱԳԻԾ -->
+                    <!-- ================================ -->
+
+                    <TextBlock Text="Վարքագիծ"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="#333333"
+                               Margin="0,0,0,10"/>
+
+                    <CheckBox Content="Windows-ի գործարկման ժամանակ ավտոմատ գործարկել DesktopNotes-ը"
+                              FontSize="12"
+                              IsChecked="True"
+                              Margin="0,0,0,6"/>
+
+                </StackPanel>
+
+            </ScrollViewer>
+
+        </Border>
+
+
+        <!-- ================================================= -->
+        <!-- ՆԵՐՔԵՒԻ ԿՈՃԱԿՆԵՐ -->
+        <!-- ================================================= -->
+
+        <Grid Grid.Row="1"
+              Margin="0,12,0,0">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Button x:Name="SaveButton"
+                    Grid.Column="1"
+                    Content="Պահպանել"
+                    Width="90"
+                    Height="30"
+                    IsDefault="True"
+                    Click="SaveButton_Click"/>
+
+            <Button x:Name="CancelButton"
+                    Grid.Column="3"
+                    Content="Չեղարկել"
+                    Width="90"
+                    Height="30"
+                    IsCancel="True"
+                    Click="CancelButton_Click"/>
+
+        </Grid>
+
+    </Grid>
+
+</Window>

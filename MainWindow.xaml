@@ -303,7 +303,7 @@
         <!-- Թավ -->
         <Button x:Name="QuickBoldButton"
                 Margin="0,0,0,0"
-                Content="B"
+                Content="Թ"
                 Width="16"
                 Height="16"
                 FontSize="14"
@@ -340,7 +340,7 @@
 
         <!-- Շեղ -->
         <Button x:Name="QuickItalicButton"
-                Content="I"
+                Content="Շ"
                 Width="16"
                 Height="16"
                 FontSize="14"
@@ -403,8 +403,8 @@
 
                 <!-- Գույնի քառակուսին -->
                 <Border x:Name="QuickTextColorPreview"
-                        Width="10"
-                        Height="10"
+                        Width="11"
+                        Height="11"
                         Background="#000000"
                         BorderBrush="#555555"
                         BorderThickness="1"
@@ -492,13 +492,14 @@
                         </Style>
                     </StackPanel.Resources>
                     <Button Style="{StaticResource PaletteColorButton}" Tag="#000000" Click="PaletteColor_Click" ToolTip="Սեւ"><Border Width="10" Height="10" Background="#000000" CornerRadius="1"/></Button>
-                    <Button Style="{StaticResource PaletteColorButton}" Tag="#464646" Click="PaletteColor_Click" ToolTip="Մուգ մոխրագույն"><Border Width="10" Height="10" Background="#464646" CornerRadius="1"/></Button>
-                    <Button Style="{StaticResource PaletteColorButton}" Tag="#B40000" Click="PaletteColor_Click" ToolTip="Կարմիր"><Border Width="10" Height="10" Background="#B40000" CornerRadius="1"/></Button>
-                    <Button Style="{StaticResource PaletteColorButton}" Tag="#0046B4" Click="PaletteColor_Click" ToolTip="Կապույտ"><Border Width="10" Height="10" Background="#0046B4" CornerRadius="1"/></Button>
-                    <Button Style="{StaticResource PaletteColorButton}" Tag="#00783C" Click="PaletteColor_Click" ToolTip="Կանաչ"><Border Width="10" Height="10" Background="#00783C" CornerRadius="1"/></Button>
-                    <Button Style="{StaticResource PaletteColorButton}" Tag="#78461E" Click="PaletteColor_Click" ToolTip="Շագանակագույն"><Border Width="10" Height="10" Background="#78461E" CornerRadius="1"/></Button>
-                    <Button Style="{StaticResource PaletteColorButton}" Tag="#6A1B9A" Click="PaletteColor_Click" ToolTip="Մանուշակագույն"><Border Width="10" Height="10" Background="#6A1B9A" CornerRadius="1"/></Button>
-                    <Button Style="{StaticResource PaletteColorButton}" Tag="#E06C00" Click="PaletteColor_Click" ToolTip="Նարնջագույն"><Border Width="10" Height="10" Background="#E06C00" CornerRadius="1"/></Button>
+                    <Button Style="{StaticResource PaletteColorButton}" Tag="#FFFFFF" Click="PaletteColor_Click" ToolTip="Սպիտակ"><Border Width="11" Height="11" Background="#FFFFFF" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="1"/></Button>
+                    <Button Style="{StaticResource PaletteColorButton}" Tag="#868686" Click="PaletteColor_Click" ToolTip="Գորշ"><Border Width="10" Height="10" Background="#868686" CornerRadius="1"/></Button>
+                    <Button Style="{StaticResource PaletteColorButton}" Tag="#ff0000" Click="PaletteColor_Click" ToolTip="Կարմիր"><Border Width="10" Height="10" Background="#ff0000" CornerRadius="1"/></Button>
+                    <Button Style="{StaticResource PaletteColorButton}" Tag="#ffc000" Click="PaletteColor_Click" ToolTip="Նարինջ"><Border Width="10" Height="10" Background="#ffc000" CornerRadius="1"/></Button>
+                    <Button Style="{StaticResource PaletteColorButton}" Tag="#ffff00" Click="PaletteColor_Click" ToolTip="Դեղին"><Border Width="10" Height="10" Background="#ffff00" CornerRadius="1"/></Button>
+                    <Button Style="{StaticResource PaletteColorButton}" Tag="#00b050" Click="PaletteColor_Click" ToolTip="Կանաչ"><Border Width="10" Height="10" Background="#00b050" CornerRadius="1"/></Button>
+                    <Button Style="{StaticResource PaletteColorButton}" Tag="#0000ff" Click="PaletteColor_Click" ToolTip="Կապույտ"><Border Width="10" Height="10" Background="#0000ff" CornerRadius="1"/></Button>
+                    <Button Style="{StaticResource PaletteColorButton}" Tag="#8a00ff" Click="PaletteColor_Click" ToolTip="Մանուշ"><Border Width="10" Height="10" Background="#8a00ff" CornerRadius="1"/></Button>
                     <Button Style="{StaticResource MoreColorsButton}"
                             Click="CustomTextColor_Click"
                             ToolTip="Այլ…">
