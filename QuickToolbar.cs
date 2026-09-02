@@ -193,14 +193,40 @@ public partial class MainWindow
         return value is FontStyle style && style == FontStyles.Italic;
     }
 
+    public SolidColorBrush GetNoteHoverBrush(double factor = 0.85)
+    {
+        if (Note.Background is SolidColorBrush solid)
+        {
+            Color c = solid.Color;
+            byte r = (byte)Math.Max(0, Math.Min(255, (int)(c.R * factor)));
+            byte g = (byte)Math.Max(0, Math.Min(255, (int)(c.G * factor)));
+            byte b = (byte)Math.Max(0, Math.Min(255, (int)(c.B * factor)));
+            return new SolidColorBrush(Color.FromArgb(c.A, r, g, b));
+        }
+        return new SolidColorBrush(Color.FromArgb(40, 0, 0, 0));
+    }
+
+    public SolidColorBrush GetNoteHoverForeground()
+    {
+        if (Note.Background is SolidColorBrush solid)
+        {
+            Color c = solid.Color;
+            byte r = (byte)Math.Max(0, (int)(c.R * 0.35));
+            byte g = (byte)Math.Max(0, (int)(c.G * 0.35));
+            byte b = (byte)Math.Max(0, (int)(c.B * 0.35));
+            return new SolidColorBrush(Color.FromArgb(255, r, g, b));
+        }
+        return new SolidColorBrush(ColorFromHex("#222222"));
+    }
+
     private void QuickButton_MouseEnter(
         object sender,
         MouseEventArgs e)
     {
         if (sender is Button button)
         {
-            button.Background = ColorFromBrush("#FDE489");
-            button.Foreground = ColorFromBrush("#5C4814");
+            button.Background = GetNoteHoverBrush(0.85);
+            button.Foreground = GetNoteHoverForeground();
         }
     }
 

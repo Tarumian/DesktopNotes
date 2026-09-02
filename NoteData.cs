@@ -51,5 +51,8 @@ namespace DesktopNotes
         public DateTime? CompletedDate { get; set; }
 
         public bool IsClosed { get; set; } = false;
+        
+        // Գամված է ամենավերեւում (Always on Top)
+        public bool IsPinned { get; set; } = false;
     }
 }

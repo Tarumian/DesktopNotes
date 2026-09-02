@@ -64,6 +64,9 @@ namespace DesktopNotes
 
         public bool AllowFreeResize { get; set; } = false;
 
+        // Տրցակի հավասարեցման լռելյայն դիրք ("TopLeft", "TopCenter", "TopRight")
+        public string StackAlignment { get; set; } = "TopLeft";
+
         // Օգտվողի կողմից ավելացված չափեր (օրինակ՝ "200 × 300")
         public List<string> CustomSizes { get; set; } = new List<string>();
 

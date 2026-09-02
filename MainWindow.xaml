@@ -8,8 +8,9 @@
         AllowsTransparency="True"
         Background="Transparent"
         ResizeMode="NoResize"
-        ShowInTaskbar="True"
+        ShowInTaskbar="False"
         PreviewMouseLeftButtonDown="NoteWindow_PreviewMouseLeftButtonDown"
+        PreviewKeyDown="NoteWindow_PreviewKeyDown"
         Loaded="QuickToolbar_Loaded"
         MouseEnter="NoteWindow_MouseEnter"
         MouseLeave="NoteWindow_MouseLeave">
@@ -31,6 +32,21 @@
           Click="SearchNotes_Click"/>
 
 <Separator/>
+
+                <MenuItem x:Name="ConvertToStackMenuItem"
+                          Header="Վերածել տրցակի"
+                          Click="ConvertToStack_Click"/>
+
+                <Separator/>
+
+                <MenuItem Header="Ուղղահայաց դիրք (0°)"
+                          Click="ResetRotationZero_Click"/>
+
+                <MenuItem x:Name="PinMenuItem"
+                          Header="Գամել (Ամենավերևում)"
+                          Click="TogglePin_Click"/>
+
+                <Separator/>
 
                 <MenuItem Header="Տառատեսակ">
                     <MenuItem Header="Comic Sans MS"
@@ -94,10 +110,13 @@
         <!-- ===================================================== -->
 
         <Border x:Name="Note"
+                MinWidth="130"
+                MinHeight="80"
                 Width="300"
                 Height="220"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                Margin="300,300,0,0"
                 Background="#FFF59D"
                 CornerRadius="3"
                 BorderThickness="0"
@@ -115,8 +134,8 @@
             </Border.RenderTransform>
 
             <Border.RenderTransformOrigin>
-                <Point X="0.5"
-                       Y="0.5"/>
+                <Point X="0"
+                       Y="0"/>
             </Border.RenderTransformOrigin>
 
             <Border.Effect>
@@ -142,6 +161,29 @@
             Background="Transparent"
             Cursor="SizeAll"
             MouseLeftButtonDown="MoveArea_MouseLeftButtonDown"/>
+
+    <!-- Գամ (Pin 📌) -->
+    <Button x:Name="PinButton"
+            Content="📌"
+            Width="20"
+            Height="20"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Top"
+            Margin="0,-5,0,0"
+            FontSize="11"
+            Background="Transparent"
+            BorderThickness="0"
+            Padding="0"
+            FocusVisualStyle="{x:Null}"
+            Visibility="Collapsed"
+            Click="PinButton_Click"
+            ToolTip="Ապագամել (հանել ամենավերևից)">
+        <Button.Template>
+            <ControlTemplate TargetType="Button">
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </ControlTemplate>
+        </Button.Template>
+    </Button>
 
     <!-- + եւ − -->
     <StackPanel x:Name="EditButtons"
@@ -237,9 +279,10 @@
 
 <Button x:Name="CompleteButton"
         Content="✓"
-        Width="28"
-        Height="22"
-        FontSize="14"
+        Width="25"
+        Height="25"
+        Margin="-7,0,0,0"
+        FontSize="15"
         Foreground="#555555"
         Background="Transparent"
         BorderThickness="0"
@@ -277,6 +320,29 @@
         Margin="5,8,0,0"
         Background="Transparent"
         Visibility="Collapsed">
+
+    <Border.Resources>
+        <Style x:Key="QuickArrowButton" TargetType="Button">
+            <Setter Property="Width" Value="8.5"/>
+            <Setter Property="Height" Value="6"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Foreground" Value="#555555"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="1">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Border.Resources>
 
     <StackPanel Orientation="Horizontal"
                 HorizontalAlignment="Left"
@@ -439,7 +505,7 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#FDE489"/>
+                                                <Setter Property="Background" Value="#25000000"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -465,7 +531,7 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#FDE489"/>
+                                                <Setter Property="Background" Value="#25000000"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -503,42 +569,41 @@
                     Margin="3,0,0,0"
                     VerticalAlignment="Center"
                     ToolTip="Տառաչափ">
-            <TextBlock Text="A"
-                       FontSize="11"
+            <TextBlock Text="Տ"
+                       FontSize="14"
                        FontWeight="Bold"
                        Foreground="#555555"
                        VerticalAlignment="Center"
-                       Margin="0,0,1,0"/>
+                       Margin="0,2,0,0"/>
             <StackPanel Orientation="Vertical"
-                        VerticalAlignment="Center">
+                        VerticalAlignment="Center"
+                        Margin="0.5,1,0,0">
                 <Button x:Name="QuickFontSizeIncreaseButton"
-                        Width="12"
-                        Height="10"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Padding="0"
-                        Foreground="#555555"
-                        FontSize="7"
-                        FocusVisualStyle="{x:Null}"
-                        Content="▲"
+                        Style="{StaticResource QuickArrowButton}"
+                        Margin="0,2,0,0"
                         ToolTip="Մեծացնել տառաչափը"
                         Click="QuickFontSizeIncrease_Click"
                         MouseEnter="QuickButton_MouseEnter"
-                        MouseLeave="QuickButton_MouseLeave"/>
+                        MouseLeave="QuickButton_MouseLeave">
+                    <Path Data="M 0,3.8 L 3.5,0 L 7,3.8 Z"
+                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          Stretch="Uniform"
+                          Width="7"
+                          Height="3.8"/>
+                </Button>
                 <Button x:Name="QuickFontSizeDecreaseButton"
-                        Width="12"
-                        Height="10"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Padding="0"
-                        Foreground="#555555"
-                        FontSize="7"
-                        FocusVisualStyle="{x:Null}"
-                        Content="▼"
+                        Style="{StaticResource QuickArrowButton}"
+                        Margin="0,0.5,0,0"
                         ToolTip="Փոքրացնել տառաչափը"
                         Click="QuickFontSizeDecrease_Click"
                         MouseEnter="QuickButton_MouseEnter"
-                        MouseLeave="QuickButton_MouseLeave"/>
+                        MouseLeave="QuickButton_MouseLeave">
+                    <Path Data="M 0,0 L 7,0 L 3.5,3.8 Z"
+                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          Stretch="Uniform"
+                          Width="7"
+                          Height="3.8"/>
+                </Button>
             </StackPanel>
         </StackPanel>
 
@@ -547,41 +612,40 @@
                     Margin="3,0,0,0"
                     VerticalAlignment="Center"
                     ToolTip="Տողամիջյան հեռավորություն">
-            <TextBlock Text="↕"
-                       FontSize="12"
+            <TextBlock Text="≣"
+                       FontSize="14"
                        Foreground="#555555"
                        VerticalAlignment="Center"
-                       Margin="0,-2,1,0"/>
+                       Margin="0,0,0,0"/>
             <StackPanel Orientation="Vertical"
-                        VerticalAlignment="Center">
+                        VerticalAlignment="Center"
+                        Margin="0.5,1,0,0">
                 <Button x:Name="QuickLineSpacingIncreaseButton"
-                        Width="12"
-                        Height="10"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Padding="0"
-                        Foreground="#555555"
-                        FontSize="7"
-                        FocusVisualStyle="{x:Null}"
-                        Content="▲"
+                        Style="{StaticResource QuickArrowButton}"
+                        Margin="0,2,0,0"
                         ToolTip="Մեծացնել տողամիջոցը"
                         Click="QuickLineSpacingIncrease_Click"
                         MouseEnter="QuickButton_MouseEnter"
-                        MouseLeave="QuickButton_MouseLeave"/>
+                        MouseLeave="QuickButton_MouseLeave">
+                    <Path Data="M 0,3.8 L 3.5,0 L 7,3.8 Z"
+                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          Stretch="Uniform"
+                          Width="7"
+                          Height="3.8"/>
+                </Button>
                 <Button x:Name="QuickLineSpacingDecreaseButton"
-                        Width="12"
-                        Height="10"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Padding="0"
-                        Foreground="#555555"
-                        FontSize="7"
-                        FocusVisualStyle="{x:Null}"
-                        Content="▼"
+                        Style="{StaticResource QuickArrowButton}"
+                        Margin="0,0.5,0,0"
                         ToolTip="Փոքրացնել տողամիջոցը"
                         Click="QuickLineSpacingDecrease_Click"
                         MouseEnter="QuickButton_MouseEnter"
-                        MouseLeave="QuickButton_MouseLeave"/>
+                        MouseLeave="QuickButton_MouseLeave">
+                    <Path Data="M 0,0 L 7,0 L 3.5,3.8 Z"
+                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          Stretch="Uniform"
+                          Width="7"
+                          Height="3.8"/>
+                </Button>
             </StackPanel>
         </StackPanel>
 
@@ -591,40 +655,40 @@
                     VerticalAlignment="Center"
                     ToolTip="Պարբերությունների հեռավորություն">
             <TextBlock Text="¶"
-                       FontSize="11"
+                       FontSize="14"
+                       FontWeight="Bold"
                        Foreground="#555555"
                        VerticalAlignment="Center"
-                       Margin="0,0,1,0"/>
+                       Margin="0,2,0,0"/>
             <StackPanel Orientation="Vertical"
-                        VerticalAlignment="Center">
+                        VerticalAlignment="Center"
+                        Margin="0.5,1,0,0">
                 <Button x:Name="QuickParagraphSpacingIncreaseButton"
-                        Width="12"
-                        Height="10"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Padding="0"
-                        Foreground="#555555"
-                        FontSize="7"
-                        FocusVisualStyle="{x:Null}"
-                        Content="▲"
+                        Style="{StaticResource QuickArrowButton}"
+                        Margin="0,2,0,0"
                         ToolTip="Մեծացնել պարբերությունների հեռավորությունը"
                         Click="QuickParagraphSpacingIncrease_Click"
                         MouseEnter="QuickButton_MouseEnter"
-                        MouseLeave="QuickButton_MouseLeave"/>
+                        MouseLeave="QuickButton_MouseLeave">
+                    <Path Data="M 0,3.8 L 3.5,0 L 7,3.8 Z"
+                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          Stretch="Uniform"
+                          Width="7"
+                          Height="3.8"/>
+                </Button>
                 <Button x:Name="QuickParagraphSpacingDecreaseButton"
-                        Width="12"
-                        Height="10"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Padding="0"
-                        Foreground="#555555"
-                        FontSize="7"
-                        FocusVisualStyle="{x:Null}"
-                        Content="▼"
+                        Style="{StaticResource QuickArrowButton}"
+                        Margin="0,0.5,0,0"
                         ToolTip="Փոքրացնել պարբերությունների հեռավորությունը"
                         Click="QuickParagraphSpacingDecrease_Click"
                         MouseEnter="QuickButton_MouseEnter"
-                        MouseLeave="QuickButton_MouseLeave"/>
+                        MouseLeave="QuickButton_MouseLeave">
+                    <Path Data="M 0,0 L 7,0 L 3.5,3.8 Z"
+                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          Stretch="Uniform"
+                          Width="7"
+                          Height="3.8"/>
+                </Button>
             </StackPanel>
         </StackPanel>
 
@@ -725,6 +789,78 @@
                     </Button.Style>
 
                 </Button>
+
+                <!-- ================================================= -->
+                <!-- ՏՐՑԱԿԻ ԹԵՐԹՄԱՆ ԳՈՏԻ (STACK NAVIGATION) -->
+                <!-- ================================================= -->
+                <Border x:Name="StackNavigationBar"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Bottom"
+                        Margin="0,0,0,3"
+                        Background="Transparent"
+                        Padding="0"
+                        Visibility="Collapsed">
+                    <Border.Resources>
+                        <Style x:Key="StackNavArrowButton" TargetType="Button">
+                            <Setter Property="Width" Value="14"/>
+                            <Setter Property="Height" Value="16"/>
+                            <Setter Property="FontSize" Value="16"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Foreground" Value="#444444"/>
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                CornerRadius="2">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center"
+                                                              Margin="0,-4,0,0"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Border.Resources>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="StackFirstButton"
+                                Style="{StaticResource StackNavArrowButton}"
+                                Content="«"
+                                Click="StackFirst_Click"
+                                MouseEnter="StackNavButton_MouseEnter"
+                                MouseLeave="StackNavButton_MouseLeave"
+                                ToolTip="Ամենահին թերթիկ (առաջին)"/>
+                        <Button x:Name="StackPrevButton"
+                                Style="{StaticResource StackNavArrowButton}"
+                                Content="‹"
+                                Click="StackPrev_Click"
+                                MouseEnter="StackNavButton_MouseEnter"
+                                MouseLeave="StackNavButton_MouseLeave"
+                                ToolTip="Նախորդ թերթիկ (հին)"/>
+                        <TextBlock x:Name="StackPageIndicator"
+                                   Text="1 / 1"
+                                   FontSize="10"
+                                   Foreground="#333333"
+                                   VerticalAlignment="Center"
+                                   Margin="3,0"/>
+                        <Button x:Name="StackNextButton"
+                                Style="{StaticResource StackNavArrowButton}"
+                                Content="›"
+                                Click="StackNext_Click"
+                                MouseEnter="StackNavButton_MouseEnter"
+                                MouseLeave="StackNavButton_MouseLeave"
+                                ToolTip="Հաջորդ թերթիկ (նոր)"/>
+                        <Button x:Name="StackLastButton"
+                                Style="{StaticResource StackNavArrowButton}"
+                                Content="»"
+                                Click="StackLast_Click"
+                                MouseEnter="StackNavButton_MouseEnter"
+                                MouseLeave="StackNavButton_MouseLeave"
+                                ToolTip="Ամենանոր թերթիկ (վերջին)"/>
+                    </StackPanel>
+                </Border>
 
                 <!-- ================================================= -->
                 <!-- ԱԶԱՏ ՉԱՓԱՓՈԽՄԱՆ ԱՆԿՅՈՒՆ (RESIZE GRIP) -->

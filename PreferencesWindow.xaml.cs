@@ -108,6 +108,14 @@ namespace DesktopNotes
             // 8. Մատիտի հաստություն
             PencilThicknessTextBox.Text = store.PencilThickness.ToString("0");
 
+            // 8.5. Տրցակի հավասարեցում
+            if (store.StackAlignment == "TopCenter")
+                StackAlignmentComboBox.SelectedIndex = 1;
+            else if (store.StackAlignment == "TopRight")
+                StackAlignmentComboBox.SelectedIndex = 2;
+            else
+                StackAlignmentComboBox.SelectedIndex = 0;
+
             // 9. Ազատ մեծացում
             AllowFreeResizeCheckBox.IsChecked = store.AllowFreeResize;
 
@@ -584,6 +592,12 @@ namespace DesktopNotes
             // 7. Ազատ մեծացում
             store.AllowFreeResize = (AllowFreeResizeCheckBox.IsChecked == true);
 
+            // 7.5. Տրցակի հավասարեցում
+            if (StackAlignmentComboBox.SelectedItem is ComboBoxItem cbi && cbi.Tag is string alignTag)
+            {
+                store.StackAlignment = alignTag;
+            }
+
             // 8. Windows Startup
             if (AutostartCheckBox.IsChecked == true)
             {
@@ -641,6 +655,17 @@ namespace DesktopNotes
                 window.NoteText.FontWeight = store.IsBold ? FontWeights.Bold : FontWeights.Normal;
                 window.NoteText.FontStyle = store.IsItalic ? FontStyles.Italic : FontStyles.Normal;
                 window.NoteText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(store.TextColor));
+            }
+
+            // Թարմացնում ենք բոլոր տրցակների հավասարեցումը
+            foreach (NoteStack stack in store.Stacks.Values)
+            {
+                stack.Alignment = store.StackAlignment;
+                MainWindow? topWin = openNotes.FirstOrDefault(w => w.NoteId == (stack.CurrentNoteId ?? stack.NoteIds.LastOrDefault()));
+                if (topWin != null)
+                {
+                    topWin.ApplyStackAlignment(stack);
+                }
             }
 
             DnoteStorage.Save(store);

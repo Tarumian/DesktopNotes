@@ -293,18 +293,31 @@ preferencesItem.Click +=
         // Պահպանված թերթիկները
         // -------------------------------------------------
 
-foreach (NoteData data in Store.Notes.Values)
-{
-    // Բացելուց առաջ ապահովության համար նշում ենք, որ բաց է
-    data.IsClosed = false;
+        foreach (NoteData data in Store.Notes.Values)
+        {
+            // Բացելուց առաջ ապահովության համար նշում ենք, որ բաց է
+            data.IsClosed = false;
 
-    MainWindow note =
-        new MainWindow(data);
+            MainWindow note =
+                new MainWindow(data);
 
-    note.ShowInTaskbar = false;
-    note.Show();
-    note.Activate();
-}
+            note.ShowInTaskbar = false;
+            note.Show();
+        }
+
+        // Տրցակների վերին թերթիկների ակտիվացում
+        foreach (NoteStack stack in Store.Stacks.Values)
+        {
+            MainWindow? topWin = Application.Current.Windows.OfType<MainWindow>()
+                .FirstOrDefault(w => w.NoteId == (stack.CurrentNoteId ?? stack.NoteIds.LastOrDefault()));
+            if (topWin != null)
+            {
+                stack.CurrentNoteId = topWin.NoteId;
+                topWin.ApplyStackAlignment(stack);
+                topWin.Activate();
+                topWin.UpdateStackUI();
+            }
+        }
 
 
         // -------------------------------------------------

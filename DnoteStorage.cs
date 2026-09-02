@@ -34,6 +34,8 @@ namespace DesktopNotes
         }
 
 
+        private static readonly object saveLock = new object();
+
         // =====================================================
         // ՊԱՀՊԱՆՈՒՄ
         // =====================================================
@@ -41,83 +43,104 @@ namespace DesktopNotes
         public static void Save(
             NoteStore store)
         {
-            DnoteFile file =
-                new DnoteFile
+            lock (saveLock)
+            {
+                try
                 {
-                    Version = 1,
+                    DnoteFile file =
+                        new DnoteFile
+                        {
+                            Version = 1,
 
-                    NoteWidth =
-                        store.NoteWidth,
+                            NoteWidth =
+                                store.NoteWidth,
 
-                    NoteHeight =
-                        store.NoteHeight,
+                            NoteHeight =
+                                store.NoteHeight,
 
-                    NoteColor =
-                        store.NoteColor,
+                            NoteColor =
+                                store.NoteColor,
 
-                    TextColor =
-                        store.TextColor,
+                            TextColor =
+                                store.TextColor,
 
-                    FontFamily =
-                        store.FontFamily,
+                            FontFamily =
+                                store.FontFamily,
 
-                    FontSize =
-                        store.FontSize,
+                            FontSize =
+                                store.FontSize,
 
-                    IsBold =
-                        store.IsBold,
+                            IsBold =
+                                store.IsBold,
 
-                    IsItalic =
-                        store.IsItalic,
+                            IsItalic =
+                                store.IsItalic,
 
-                    PencilColor =
-                        store.PencilColor,
+                            PencilColor =
+                                store.PencilColor,
 
-                    PencilThickness =
-                        store.PencilThickness,
+                            PencilThickness =
+                                store.PencilThickness,
 
-                    AllowFreeResize =
-                        store.AllowFreeResize,
+                            AllowFreeResize =
+                                store.AllowFreeResize,
 
-                    CustomSizes =
-                        store.CustomSizes,
+                            StackAlignment =
+                                store.StackAlignment,
 
-                    CustomNoteColors =
-                        store.CustomNoteColors,
+                            CustomSizes =
+                                store.CustomSizes,
 
-                    CustomTextColors =
-                        store.CustomTextColors,
+                            CustomNoteColors =
+                                store.CustomNoteColors,
 
-                    CustomPencilColors =
-                        store.CustomPencilColors,
+                            CustomTextColors =
+                                store.CustomTextColors,
 
-                    Notes =
-                        store.Notes.Values.ToList(),
+                            CustomPencilColors =
+                                store.CustomPencilColors,
 
-                    Stacks =
-                        store.Stacks.Values.ToList(),
+                            Notes =
+                                store.Notes.Values.ToList(),
 
-                    DeletedNotes =
-                        store.DeletedNotes.Values.ToList()
-                };
+                            Stacks =
+                                store.Stacks.Values.ToList(),
 
+                            DeletedNotes =
+                                store.DeletedNotes.Values.ToList()
+                        };
 
-            JsonSerializerOptions options =
-                new JsonSerializerOptions
+                    JsonSerializerOptions options =
+                        new JsonSerializerOptions
+                        {
+                            WriteIndented = true
+                        };
+
+                    string json =
+                        JsonSerializer.Serialize(
+                            file,
+                            options);
+
+                    for (int retry = 0; retry < 5; retry++)
+                    {
+                        try
+                        {
+                            File.WriteAllText(
+                                FilePath,
+                                json);
+                            break;
+                        }
+                        catch (IOException)
+                        {
+                            if (retry == 4) break;
+                            System.Threading.Thread.Sleep(30);
+                        }
+                    }
+                }
+                catch
                 {
-                    WriteIndented = true
-                };
-
-
-            string json =
-                JsonSerializer.Serialize(
-                    file,
-                    options);
-
-
-            File.WriteAllText(
-                FilePath,
-                json);
+                }
+            }
         }
 
 
@@ -128,22 +151,23 @@ namespace DesktopNotes
         public static void Load(
             NoteStore store)
         {
-            if (!File.Exists(FilePath))
-                return;
+            lock (saveLock)
+            {
+                try
+                {
+                    if (!File.Exists(FilePath))
+                        return;
 
+                    string json =
+                        File.ReadAllText(
+                            FilePath);
 
-            string json =
-                File.ReadAllText(
-                    FilePath);
+                    DnoteFile? file =
+                        JsonSerializer.Deserialize<DnoteFile>(
+                            json);
 
-
-            DnoteFile? file =
-                JsonSerializer.Deserialize<DnoteFile>(
-                    json);
-
-
-            if (file == null)
-                return;
+                    if (file == null)
+                        return;
 
 
             // -------------------------------------------------
@@ -178,6 +202,9 @@ namespace DesktopNotes
                 store.PencilThickness = file.PencilThickness;
 
             store.AllowFreeResize = file.AllowFreeResize;
+
+            if (!string.IsNullOrEmpty(file.StackAlignment))
+                store.StackAlignment = file.StackAlignment;
 
             if (file.CustomSizes != null)
                 store.CustomSizes = file.CustomSizes;
@@ -228,6 +255,11 @@ namespace DesktopNotes
             {
                 store.DeletedNotes[note.Id] =
                     note;
+            }
+                }
+                catch
+                {
+                }
             }
         }
     }

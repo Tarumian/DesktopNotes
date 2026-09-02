@@ -75,6 +75,7 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
@@ -157,9 +158,30 @@
                                     Click="RemoveTextColorButton_Click"/>
                         </StackPanel>
 
+                        <!-- Տրցակի հավասարեցում -->
+                        <TextBlock Grid.Row="3"
+                                   Grid.Column="0"
+                                   Text="Տրցակի հավասարեցում՝"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"
+                                   Margin="0,10,0,0"/>
+
+                        <ComboBox x:Name="StackAlignmentComboBox"
+                                  Grid.Row="3"
+                                  Grid.Column="1"
+                                  Width="190"
+                                  Height="26"
+                                  FontSize="12"
+                                  HorizontalAlignment="Left"
+                                  Margin="0,10,0,0">
+                            <ComboBoxItem Content="Վերին ձախ անկյուն" Tag="TopLeft"/>
+                            <ComboBoxItem Content="Վերին եզրի միջնակետ" Tag="TopCenter"/>
+                            <ComboBoxItem Content="Վերին աջ անկյուն" Tag="TopRight"/>
+                        </ComboBox>
+
                         <!-- Ազատ մեծացում -->
                         <CheckBox x:Name="AllowFreeResizeCheckBox"
-                                  Grid.Row="3"
+                                  Grid.Row="4"
                                   Grid.Column="1"
                                   Content="Թույլատրել թերթիկի չափի ազատ փոփոխում անկյունից (Resize)"
                                   FontSize="12"
