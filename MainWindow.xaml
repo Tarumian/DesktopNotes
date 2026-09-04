@@ -11,7 +11,6 @@
         ShowInTaskbar="False"
         PreviewMouseLeftButtonDown="NoteWindow_PreviewMouseLeftButtonDown"
         PreviewKeyDown="NoteWindow_PreviewKeyDown"
-        PreviewKeyUp="NoteWindow_PreviewKeyUp"
         Loaded="QuickToolbar_Loaded"
         MouseEnter="NoteWindow_MouseEnter"
         MouseLeave="NoteWindow_MouseLeave">
@@ -27,52 +26,25 @@
                          Opened="NoteContextMenu_Opened">
 
                 <MenuItem Header="Նոր թերթիկ"
-                          InputGestureText="Ctrl+N"
-                          Click="NewNote_Click"/>
+          Click="NewNote_Click"/>
 
-                <MenuItem Header="Որոնել թերթիկներ"
-                          InputGestureText="Ctrl+F"
-                          Click="SearchNotes_Click"/>
+<MenuItem Header="Որոնել թերթիկներ"
+          Click="SearchNotes_Click"/>
 
-                <Separator/>
+<Separator/>
 
                 <MenuItem x:Name="ConvertToStackMenuItem"
                           Header="Վերածել տրցակի"
                           Click="ConvertToStack_Click"/>
-
-                <MenuItem x:Name="DetachFromStackMenuItem"
-                          Header="Հեռացնել տրցակից"
-                          Click="DetachFromStackMenu_Click"
-                          Visibility="Collapsed"/>
 
                 <Separator/>
 
                 <MenuItem Header="Ուղղահայաց դիրք (0°)"
                           Click="ResetRotationZero_Click"/>
 
-                <MenuItem Header="Պտտման կետ">
-                    <MenuItem x:Name="RotationOriginTopCenterMenuItem"
-                              Header="Վերևի մեջտեղ (գամի կետ)"
-                              Click="RotationOriginTopCenter_Click"/>
-                    <MenuItem x:Name="RotationOriginTopLeftMenuItem"
-                              Header="Ձախ վերևի անկյուն"
-                              Click="RotationOriginTopLeft_Click"/>
-                </MenuItem>
-
                 <MenuItem x:Name="PinMenuItem"
                           Header="Գամել (Ամենավերևում)"
                           Click="TogglePin_Click"/>
-
-                <Separator/>
-
-                <MenuItem x:Name="PencilMenuItem"
-                          Header="Մատիտ (նկարել)"
-                          InputGestureText="Ctrl+P"
-                          Click="TogglePencil_Click"/>
-
-                <MenuItem x:Name="ClearInkMenuItem"
-                          Header="Մաքրել մատիտի հետքերը"
-                          Click="ClearInk_Click"/>
 
                 <Separator/>
 
@@ -118,18 +90,16 @@
 
                 <Separator/>
 
-                <MenuItem Header="Արտահանել Excel"
-                          Click="ExportExcel_Click"/>
+<MenuItem Header="Արտահանել Excel"
+          Click="ExportExcel_Click"/>
 
-                <MenuItem x:Name="UndoDeleteMenuItem"
-                          Header="Հետարկել"
-                          InputGestureText="Ctrl+Z"
-                          Click="UndoDelete_Click"
-                          IsEnabled="False"/>
+<MenuItem x:Name="UndoDeleteMenuItem"
+          Header="Հետարկել ջնջումը"
+          Click="UndoDelete_Click"
+          IsEnabled="False"/>
 
-                <MenuItem Header="Փակել"
-                          InputGestureText="Ctrl+W"
-                          Click="CloseMenu_Click"/>
+<MenuItem Header="Փակել"
+          Click="CloseMenu_Click"/>
 
             </ContextMenu>
         </Grid.ContextMenu>
@@ -140,7 +110,7 @@
         <!-- ===================================================== -->
 
         <Border x:Name="Note"
-                MinWidth="140"
+                MinWidth="130"
                 MinHeight="80"
                 Width="300"
                 Height="220"
@@ -164,7 +134,7 @@
             </Border.RenderTransform>
 
             <Border.RenderTransformOrigin>
-                <Point X="0.5"
+                <Point X="0"
                        Y="0"/>
             </Border.RenderTransformOrigin>
 
@@ -192,13 +162,15 @@
             Cursor="SizeAll"
             MouseLeftButtonDown="MoveArea_MouseLeftButtonDown"/>
 
-    <!-- Գամ (Pin) -->
+    <!-- Գամ (Pin 📌) -->
     <Button x:Name="PinButton"
-            Width="18"
+            Content="📌"
+            Width="20"
             Height="20"
             HorizontalAlignment="Center"
             VerticalAlignment="Top"
-            Margin="0,-7,0,0"
+            Margin="0,-5,0,0"
+            FontSize="11"
             Background="Transparent"
             BorderThickness="0"
             Padding="0"
@@ -208,11 +180,7 @@
             ToolTip="Ապագամել (հանել ամենավերևից)">
         <Button.Template>
             <ControlTemplate TargetType="Button">
-                <Image Source="{Binding Tag, RelativeSource={RelativeSource AncestorType=Button}}"
-                       Width="18"
-                       Height="20"
-                       Stretch="Uniform"
-                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </ControlTemplate>
         </Button.Template>
     </Button>
@@ -511,7 +479,6 @@
                AllowsTransparency="True"
                Placement="Bottom"
                PlacementTarget="{Binding ElementName=QuickTextColorButton}"
-               Closed="TextColorPalettePopup_Closed"
                StaysOpen="False">
             <Border Margin="0,4,0,0"
                     Padding="0"
@@ -604,7 +571,7 @@
                     ToolTip="Տառաչափ">
             <TextBlock Text="Տ"
                        FontSize="14"
-                       FontWeight="Regular"
+                       FontWeight="Bold"
                        Foreground="#555555"
                        VerticalAlignment="Center"
                        Margin="0,2,0,0"/>
@@ -684,7 +651,7 @@
 
         <!-- 3. ՊԱՐԲԵՐՈՒԹՅՈՒՆՆԵՐԻ ՀԵՌԱՎՈՐՈՒԹՅՈՒՆ -->
         <StackPanel Orientation="Horizontal"
-                    Margin="5,0,0,0"
+                    Margin="3,0,0,0"
                     VerticalAlignment="Center"
                     ToolTip="Պարբերությունների հեռավորություն">
             <TextBlock Text="¶"
@@ -695,7 +662,7 @@
                        Margin="0,2,0,0"/>
             <StackPanel Orientation="Vertical"
                         VerticalAlignment="Center"
-                        Margin="1.5,1,0,0">
+                        Margin="0.5,1,0,0">
                 <Button x:Name="QuickParagraphSpacingIncreaseButton"
                         Style="{StaticResource QuickArrowButton}"
                         Margin="0,2,0,0"
@@ -725,132 +692,6 @@
             </StackPanel>
         </StackPanel>
 
-        <!-- 4. ՄԱՏԻՏ -->
-        <Button x:Name="QuickPencilButton"
-                Margin="4,2,0,0"
-                Width="16"
-                Height="16"
-                ToolTip="Մատիտ (Ctrl+P)"
-                Background="Transparent"
-                BorderBrush="Transparent"
-                BorderThickness="1"
-                Padding="0"
-                FocusVisualStyle="{x:Null}"
-                Click="QuickPencilButton_Click"
-                MouseEnter="QuickButton_MouseEnter"
-                MouseLeave="QuickButton_MouseLeave">
-            <Button.Template>
-                <ControlTemplate TargetType="Button">
-                    <Grid>
-                        <Border x:Name="PencilBg"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="2"/>
-                        <Path x:Name="PencilPath"
-                              Data="M 11.5,1.5 L 14.5,4.5 L 5.5,13.5 L 2.5,14.5 L 3.5,11.5 Z M 9.5,3.5 L 12.5,6.5"
-                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                              StrokeThickness="1.2"
-                              Stretch="Uniform"
-                              Width="12"
-                              Height="12"
-                              HorizontalAlignment="Center"
-                              VerticalAlignment="Center"/>
-                    </Grid>
-                </ControlTemplate>
-            </Button.Template>
-        </Button>
-
-        <Popup x:Name="PencilColorPalettePopup"
-               AllowsTransparency="True"
-               Placement="Bottom"
-               PlacementTarget="{Binding ElementName=QuickPencilButton}"
-               Closed="PencilColorPalettePopup_Closed"
-               StaysOpen="False">
-            <Border Margin="0,4,0,0"
-                    Padding="0"
-                    Background="White"
-                    BorderBrush="#D0D0D0"
-                    BorderThickness="1"
-                    CornerRadius="2">
-                <StackPanel Orientation="Horizontal">
-                    <StackPanel.Resources>
-                        <Style x:Key="PencilPaletteColorButton" TargetType="Button">
-                            <Setter Property="Width" Value="14"/>
-                            <Setter Property="Height" Value="14"/>
-                            <Setter Property="Padding" Value="0"/>
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Setter Property="BorderThickness" Value="0"/>
-                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}"
-                                                CornerRadius="3">
-                                            <ContentPresenter HorizontalAlignment="Center"
-                                                              VerticalAlignment="Center"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#25000000"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                        <Style x:Key="PencilMoreColorsButton" TargetType="Button">
-                            <Setter Property="Height" Value="14"/>
-                            <Setter Property="Margin" Value="4,0,0,0"/>
-                            <Setter Property="Padding" Value="4,0"/>
-                            <Setter Property="FontSize" Value="14"/>
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Setter Property="BorderThickness" Value="0"/>
-                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}"
-                                                CornerRadius="2">
-                                            <ContentPresenter HorizontalAlignment="Center"
-                                                              VerticalAlignment="Center"
-                                                              Margin="0,-1,0,1"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#25000000"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </StackPanel.Resources>
-                    <Button Style="{StaticResource PencilPaletteColorButton}" Tag="#000000" Click="PencilPaletteColor_Click" ToolTip="Սեւ"><Border Width="10" Height="10" Background="#000000" CornerRadius="1"/></Button>
-                    <Button Style="{StaticResource PencilPaletteColorButton}" Tag="#FFFFFF" Click="PencilPaletteColor_Click" ToolTip="Սպիտակ"><Border Width="11" Height="11" Background="#FFFFFF" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="1"/></Button>
-                    <Button Style="{StaticResource PencilPaletteColorButton}" Tag="#868686" Click="PencilPaletteColor_Click" ToolTip="Գորշ"><Border Width="10" Height="10" Background="#868686" CornerRadius="1"/></Button>
-                    <Button Style="{StaticResource PencilPaletteColorButton}" Tag="#ff0000" Click="PencilPaletteColor_Click" ToolTip="Կարմիր"><Border Width="10" Height="10" Background="#ff0000" CornerRadius="1"/></Button>
-                    <Button Style="{StaticResource PencilPaletteColorButton}" Tag="#ffc000" Click="PencilPaletteColor_Click" ToolTip="Նարինջ"><Border Width="10" Height="10" Background="#ffc000" CornerRadius="1"/></Button>
-                    <Button Style="{StaticResource PencilPaletteColorButton}" Tag="#ffff00" Click="PencilPaletteColor_Click" ToolTip="Դեղին"><Border Width="10" Height="10" Background="#ffff00" CornerRadius="1"/></Button>
-                    <Button Style="{StaticResource PencilPaletteColorButton}" Tag="#00b050" Click="PencilPaletteColor_Click" ToolTip="Կանաչ"><Border Width="10" Height="10" Background="#00b050" CornerRadius="1"/></Button>
-                    <Button Style="{StaticResource PencilPaletteColorButton}" Tag="#0000ff" Click="PencilPaletteColor_Click" ToolTip="Կապույտ"><Border Width="10" Height="10" Background="#0000ff" CornerRadius="1"/></Button>
-                    <Button Style="{StaticResource PencilPaletteColorButton}" Tag="#8a00ff" Click="PencilPaletteColor_Click" ToolTip="Մանուշ"><Border Width="10" Height="10" Background="#8a00ff" CornerRadius="1"/></Button>
-                    <Button Style="{StaticResource PencilMoreColorsButton}"
-                            Click="CustomPencilColor_Click"
-                            ToolTip="Այլ…">
-                        <TextBlock Text="»"
-                                   FontSize="16"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center">
-                            <TextBlock.RenderTransform>
-                                <TranslateTransform Y="-2"/>
-                            </TextBlock.RenderTransform>
-                        </TextBlock>
-                    </Button>
-                </StackPanel>
-            </Border>
-        </Popup>
-
     </StackPanel>
 </Border>
 
@@ -862,42 +703,33 @@
 
 
                 <!-- ================================================= -->
-                <!-- ՏԵՔՍՏ ԵՒ ՄԱՏԻՏԻ ԹԱՓԱՆՑԻԿ ՇԵՐՏ -->
+                <!-- ՏԵՔՍՏ -->
                 <!-- ================================================= -->
 
-                <Grid Margin="4,30,4,12">
-                    <RichTextBox x:Name="NoteText"
-                                 HorizontalAlignment="Stretch"
-                                 VerticalAlignment="Stretch"
-                                 TextChanged="NoteText_TextChanged"
-                                 SelectionChanged="NoteText_SelectionChanged"
-                                 FontFamily="Comic Sans MS"
-                                 FontSize="14"
-                                 Foreground="#222222"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Padding="0"
-                                 VerticalScrollBarVisibility="Hidden"
-                                 HorizontalScrollBarVisibility="Hidden"
-                                 AcceptsReturn="True"
-                                 Cursor="IBeam"
-                                 ContextMenu="{x:Null}"
-                                 IsInactiveSelectionHighlightEnabled="True"
-                                 SelectionBrush="#7e8fac"
-                                 SelectionOpacity="0.5"
-                                 MouseRightButtonDown="NoteText_MouseRightButtonDown"
-                                 PreviewMouseLeftButtonDown="NoteText_PreviewMouseLeftButtonDown"
-                                 PreviewMouseMove="NoteText_PreviewMouseMove"
-                                 PreviewMouseLeftButtonUp="NoteText_PreviewMouseLeftButtonUp"/>
-
-                    <InkCanvas x:Name="NoteInkCanvas"
-                               HorizontalAlignment="Stretch"
-                               VerticalAlignment="Stretch"
-                               Background="Transparent"
-                               UseCustomCursor="True"
-                               IsHitTestVisible="False"
-                               EditingMode="None"/>
-                </Grid>
+                <RichTextBox x:Name="NoteText"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch"
+             Margin="4,30,4,12"
+             TextChanged="NoteText_TextChanged"
+             SelectionChanged="NoteText_SelectionChanged"
+             FontFamily="Comic Sans MS"
+             FontSize="14"
+             Foreground="#222222"
+             Background="Transparent"
+             BorderThickness="0"
+             Padding="0"
+             VerticalScrollBarVisibility="Hidden"
+             HorizontalScrollBarVisibility="Hidden"
+             AcceptsReturn="True"
+             Cursor="IBeam"
+             ContextMenu="{x:Null}"
+             IsInactiveSelectionHighlightEnabled="True"
+             SelectionBrush="#7e8fac"
+             SelectionOpacity="0.5"
+             MouseRightButtonDown="NoteText_MouseRightButtonDown"
+             PreviewMouseLeftButtonDown="NoteText_PreviewMouseLeftButtonDown"
+             PreviewMouseMove="NoteText_PreviewMouseMove"
+             PreviewMouseLeftButtonUp="NoteText_PreviewMouseLeftButtonUp"/>
 
 
                 <!-- ================================================= -->
@@ -967,9 +799,7 @@
                         Margin="0,0,0,3"
                         Background="Transparent"
                         Padding="0"
-                        Visibility="Collapsed"
-                        MouseEnter="StackNavigationBar_MouseEnter"
-                        MouseLeave="StackNavigationBar_MouseLeave">
+                        Visibility="Collapsed">
                     <Border.Resources>
                         <Style x:Key="StackNavArrowButton" TargetType="Button">
                             <Setter Property="Width" Value="14"/>

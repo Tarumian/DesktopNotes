@@ -30,28 +30,12 @@ public partial class MainWindow
         object sender,
         MouseEventArgs e)
     {
-        if (TextColorPalettePopup.IsOpen || PencilColorPalettePopup.IsOpen)
+        if (TextColorPalettePopup.IsOpen)
         {
             return;
         }
 
         QuickToolbar.Visibility = Visibility.Collapsed;
-    }
-
-    private void TextColorPalettePopup_Closed(object? sender, EventArgs e)
-    {
-        if (!IsMouseOver)
-        {
-            QuickToolbar.Visibility = Visibility.Collapsed;
-        }
-    }
-
-    private void PencilColorPalettePopup_Closed(object? sender, EventArgs e)
-    {
-        if (!IsMouseOver)
-        {
-            QuickToolbar.Visibility = Visibility.Collapsed;
-        }
     }
 
     private void QuickBoldButton_Click(
@@ -252,16 +236,7 @@ public partial class MainWindow
     {
         if (sender is Button button)
         {
-            if (button == QuickPencilButton && isPencilActive)
-            {
-                button.Background = GetNoteHoverBrush(0.70);
-                button.BorderBrush = GetNoteHoverForeground();
-                button.Foreground = GetNoteHoverForeground();
-                return;
-            }
-
             button.Background = Brushes.Transparent;
-            button.BorderBrush = Brushes.Transparent;
             button.Foreground = ColorFromBrush("#555555");
         }
     }

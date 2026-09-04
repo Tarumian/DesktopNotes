@@ -54,8 +54,5 @@ namespace DesktopNotes
         
         // Գամված է ամենավերեւում (Always on Top)
         public bool IsPinned { get; set; } = false;
-
-        // Մատիտի հետքերի տվյալներ (ISF Base64)
-        public string InkData { get; set; } = string.Empty;
     }
 }

@@ -36,7 +36,7 @@ namespace DesktopNotes
         // Տրցակի հավասարեցում՝ "TopLeft", "TopCenter", "TopRight"
         // -----------------------------------------------------
 
-        public string Alignment { get; set; } = "TopCenter";
+        public string Alignment { get; set; } = "TopLeft";
 
         // -----------------------------------------------------
         // Ուղղահայաց (զրոյական) անկյուն

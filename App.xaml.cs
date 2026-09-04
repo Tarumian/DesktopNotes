@@ -108,20 +108,19 @@ public partial class App : Application
 
                 foreach (NoteData data in Store.Notes.Values)
                 {
-                    data.IsClosed = false;
-
                     MainWindow? openNote =
                         openNotes.FirstOrDefault(
                             note => note.NoteId == data.Id);
 
                     if (openNote != null)
                     {
-                        openNote.Visibility = Visibility.Visible;
-                        openNote.WindowState = WindowState.Normal;
                         openNote.Show();
+                        openNote.WindowState = WindowState.Normal;
                         openNote.Activate();
                         continue;
                     }
+
+                    data.IsClosed = false;
 
                     MainWindow note =
                         new MainWindow(data);
@@ -130,18 +129,6 @@ public partial class App : Application
                     note.Show();
                     note.WindowState = WindowState.Normal;
                     note.Activate();
-                }
-
-                // Restore active note in every stack
-                openNotes = Application.Current.Windows.OfType<MainWindow>().ToArray();
-                foreach (NoteStack stack in Store.Stacks.Values)
-                {
-                    Guid targetId = stack.CurrentNoteId ?? stack.NoteIds.LastOrDefault();
-                    MainWindow? topWin = openNotes.FirstOrDefault(w => w.NoteId == targetId);
-                    if (topWin != null)
-                    {
-                        topWin.SetActiveStackNote(stack, targetId);
-                    }
                 }
 
                 DnoteStorage.Save(Store);
@@ -321,13 +308,14 @@ preferencesItem.Click +=
         // Տրցակների վերին թերթիկների ակտիվացում
         foreach (NoteStack stack in Store.Stacks.Values)
         {
-            Guid targetId = stack.CurrentNoteId ?? stack.NoteIds.LastOrDefault();
             MainWindow? topWin = Application.Current.Windows.OfType<MainWindow>()
-                .FirstOrDefault(w => w.NoteId == targetId);
+                .FirstOrDefault(w => w.NoteId == (stack.CurrentNoteId ?? stack.NoteIds.LastOrDefault()));
             if (topWin != null)
             {
+                stack.CurrentNoteId = topWin.NoteId;
                 topWin.ApplyStackAlignment(stack);
-                topWin.SetActiveStackNote(stack, targetId);
+                topWin.Activate();
+                topWin.UpdateStackUI();
             }
         }
 

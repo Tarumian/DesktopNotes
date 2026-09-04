@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Windows;
 
 namespace DesktopNotes
 {
@@ -89,9 +87,6 @@ namespace DesktopNotes
 
                             StackAlignment =
                                 store.StackAlignment,
-
-                            RotationOrigin =
-                                store.RotationOrigin,
 
                             CustomSizes =
                                 store.CustomSizes,
@@ -208,13 +203,8 @@ namespace DesktopNotes
 
             store.AllowFreeResize = file.AllowFreeResize;
 
-            if (!string.IsNullOrEmpty(file.StackAlignment) && file.StackAlignment != "TopLeft")
+            if (!string.IsNullOrEmpty(file.StackAlignment))
                 store.StackAlignment = file.StackAlignment;
-            else
-                store.StackAlignment = "TopCenter";
-
-            if (!string.IsNullOrEmpty(file.RotationOrigin))
-                store.RotationOrigin = file.RotationOrigin;
 
             if (file.CustomSizes != null)
                 store.CustomSizes = file.CustomSizes;
@@ -235,31 +225,8 @@ namespace DesktopNotes
 
             store.Notes.Clear();
 
-            double screenLeft = SystemParameters.VirtualScreenLeft;
-            double screenTop = SystemParameters.VirtualScreenTop;
-            double screenWidth = SystemParameters.VirtualScreenWidth;
-            double screenHeight = SystemParameters.VirtualScreenHeight;
-
-            int recoverIndex = 0;
             foreach (NoteData note in file.Notes)
             {
-                double noteVisualLeft = note.Left + 300;
-                double noteVisualTop = note.Top + 300;
-                double noteW = note.Width > 0 ? note.Width : 150;
-                double noteH = note.Height > 0 ? note.Height : 220;
-
-                bool isOffScreen = (noteVisualLeft + noteW < screenLeft + 50) ||
-                                   (noteVisualLeft > screenLeft + screenWidth - 50) ||
-                                   (noteVisualTop + noteH < screenTop + 50) ||
-                                   (noteVisualTop > screenTop + screenHeight - 50);
-
-                if (isOffScreen)
-                {
-                    note.Left = 100 + (recoverIndex % 8) * 30;
-                    note.Top = 100 + (recoverIndex % 8) * 30;
-                    recoverIndex++;
-                }
-
                 store.Notes[note.Id] =
                     note;
             }
@@ -275,46 +242,6 @@ namespace DesktopNotes
             {
                 store.Stacks[stack.Id] =
                     stack;
-            }
-
-            // Մաքրում ենք հին/կրկնվող տրցակները
-            HashSet<Guid> validStackIds = store.Notes.Values
-                .Where(n => n.StackId != null)
-                .Select(n => n.StackId!.Value)
-                .ToHashSet();
-
-            List<Guid> staleStackIds = store.Stacks.Keys
-                .Where(k => !validStackIds.Contains(k))
-                .ToList();
-
-            foreach (Guid staleId in staleStackIds)
-            {
-                store.Stacks.Remove(staleId);
-            }
-
-            foreach (NoteStack stack in store.Stacks.Values.ToList())
-            {
-                stack.Alignment = "TopCenter";
-
-                stack.NoteIds = store.Notes.Values
-                    .Where(n => n.StackId == stack.Id)
-                    .OrderBy(n => n.CreatedAt)
-                    .Select(n => n.Id)
-                    .ToList();
-
-                if (stack.NoteIds.Count <= 1)
-                {
-                    foreach (Guid id in stack.NoteIds)
-                    {
-                        if (store.Notes.TryGetValue(id, out NoteData? d))
-                            d.StackId = null;
-                    }
-                    store.Stacks.Remove(stack.Id);
-                }
-                else if (stack.CurrentNoteId == null || !stack.NoteIds.Contains(stack.CurrentNoteId.Value))
-                {
-                    stack.CurrentNoteId = stack.NoteIds.LastOrDefault();
-                }
             }
 
 

@@ -46,9 +46,7 @@ namespace DesktopNotes
 
         public bool AllowFreeResize { get; set; } = false;
 
-        public string StackAlignment { get; set; } = "TopCenter";
-
-        public string RotationOrigin { get; set; } = "TopCenter";
+        public string StackAlignment { get; set; } = "TopLeft";
 
         public List<string> CustomSizes { get; set; } = new List<string>();
 

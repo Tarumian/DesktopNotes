@@ -93,39 +93,21 @@ namespace DesktopNotes
 
             if (existingWindow != null)
             {
-                noteData.IsClosed = false;
-                existingWindow.Visibility = Visibility.Visible;
-                existingWindow.WindowState = WindowState.Normal;
-                existingWindow.EnsureOnScreen();
-
-                if (noteData.StackId != null && store.Stacks.TryGetValue(noteData.StackId.Value, out NoteStack? stack))
-                {
-                    existingWindow.SetActiveStackNote(stack, existingWindow.NoteId);
-                }
-
                 existingWindow.Show();
                 existingWindow.Activate();
-                existingWindow.Focus();
-                DnoteStorage.Save(store);
                 return;
             }
 
             noteData.IsClosed = false;
+
             DnoteStorage.Save(store);
 
             MainWindow note =
                 new MainWindow(noteData);
 
             note.ShowInTaskbar = false;
-            note.EnsureOnScreen();
             note.Show();
             note.Activate();
-            note.Focus();
-
-            if (noteData.StackId != null && store.Stacks.TryGetValue(noteData.StackId.Value, out NoteStack? st))
-            {
-                note.SetActiveStackNote(st, note.NoteId);
-            }
         }
 
         private void KeywordTextBox_TextChanged(

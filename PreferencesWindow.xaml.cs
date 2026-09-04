@@ -109,18 +109,12 @@ namespace DesktopNotes
             PencilThicknessTextBox.Text = store.PencilThickness.ToString("0");
 
             // 8.5. Տրցակի հավասարեցում
-            if (store.StackAlignment == "TopLeft")
+            if (store.StackAlignment == "TopCenter")
                 StackAlignmentComboBox.SelectedIndex = 1;
             else if (store.StackAlignment == "TopRight")
                 StackAlignmentComboBox.SelectedIndex = 2;
             else
                 StackAlignmentComboBox.SelectedIndex = 0;
-
-            // 8.6. Պտտման/չափափոխման կետ
-            if (store.RotationOrigin == "TopLeft")
-                RotationOriginComboBox.SelectedIndex = 1;
-            else
-                RotationOriginComboBox.SelectedIndex = 0;
 
             // 9. Ազատ մեծացում
             AllowFreeResizeCheckBox.IsChecked = store.AllowFreeResize;
@@ -604,12 +598,6 @@ namespace DesktopNotes
                 store.StackAlignment = alignTag;
             }
 
-            // 7.6. Պտտման/չափափոխման կետ
-            if (RotationOriginComboBox.SelectedItem is ComboBoxItem roItem && roItem.Tag is string roTag)
-            {
-                store.RotationOrigin = roTag;
-            }
-
             // 8. Windows Startup
             if (AutostartCheckBox.IsChecked == true)
             {
@@ -623,12 +611,10 @@ namespace DesktopNotes
             // 9. Պահպանել .dnote նիշքում
             DnoteStorage.Save(store);
 
-            // 10. Թարմացնել բոլոր բաց թերթիկների վրա
+            // 10. Թարմացնել ազատ չափափոխման հնարավորությունը բոլոր բաց թերթիկների վրա
             foreach (MainWindow window in Application.Current.Windows.OfType<MainWindow>())
             {
                 window.UpdateResizeGripState();
-                window.UpdateRotationOrigin();
-                window.UpdatePencilDrawingAttributes();
             }
 
             // 11. Եթե նշված է «Կիրառել նոր նախընտրանքները նաև արդեն բացված թերթիկների վրա»
