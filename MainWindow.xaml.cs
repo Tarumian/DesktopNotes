@@ -5,10 +5,13 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Windows.Ink;
 using Forms = System.Windows.Forms;
 
 
@@ -29,7 +32,21 @@ namespace DesktopNotes
     // «փակել ու պահել» գործողության։
     private bool isDeleting;
     
-    private NoteData Data;
+    public NoteData Data;
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetCursorPos(int x, int y);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+    private static readonly IntPtr HWND_TOP = IntPtr.Zero;
+    private const uint SWP_NOSIZE = 0x0001;
+    private const uint SWP_NOMOVE = 0x0002;
+    private const uint SWP_SHOWWINDOW = 0x0040;
+    private const uint SWP_NOACTIVATE = 0x0010;
 
     // =========================================================
     // WINDOW-Ի ԵՐԿՐԱՉԱՓՈՒԹՅՈՒՆ
@@ -109,6 +126,8 @@ private void ApplyDataToWindow()
 
     Top =
         Data.Top;
+
+    EnsureOnScreen();
 
 
     // =====================================================
@@ -215,7 +234,12 @@ private void ApplyDataToWindow()
 
     // ԳԱՄ (PIN / ALWAYS ON TOP)
     Topmost = Data.IsPinned;
-    PinButton.Visibility = Data.IsPinned ? Visibility.Visible : Visibility.Collapsed;
+    UpdatePinVisual();
+
+    UpdateRotationOrigin();
+
+    LoadInkFromData();
+    UpdatePencilDrawingAttributes();
 
     UpdateStackUI();
 }
@@ -425,6 +449,8 @@ private void UpdateDataFromWindow()
                 reader.ReadToEnd();
         }
     }
+
+    SaveInkToData();
 }
 
 private void InitializeTextSaveTimer()
@@ -465,7 +491,7 @@ private void TextSaveTimer_Tick(
     SaveCurrentState();
 }
 
-private void SaveCurrentState()
+public void SaveCurrentState()
 {
     UpdateDataFromWindow();
 
@@ -483,16 +509,31 @@ private void SetCurrentNoteSize(
     double width,
     double height)
 {
+    double oldWidth = Note.Width > 0 ? Note.Width : Data.Width;
+    double deltaW = width - oldWidth;
+
     Data.Width = width;
     Data.Height = height;
 
     Note.Width = width;
     Note.Height = height;
 
+    NoteStore store = ((App)Application.Current).Store;
+    if (store.RotationOrigin != "TopLeft" && Math.Abs(deltaW) > 0.001)
+    {
+        Left -= deltaW / 2.0;
+        Data.Left = Left;
+    }
+
     UpdateWindowSizeForRotation(false);
     UpdateDataFromWindow();
 
-    DnoteStorage.Save(((App)Application.Current).Store);
+    if (Data.StackId != null && store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
+    {
+        ApplyStackAlignment(stack, this);
+    }
+
+    DnoteStorage.Save(store);
 }
 
 private void Size150x220_Click(
@@ -596,37 +637,79 @@ private void Size150x450_Click(
         // =========================================================
 
         private void Note_MouseEnter(
-    object sender,
-    MouseEventArgs e)
-{
-    CloseButton.Visibility =
-        Visibility.Visible;
+            object sender,
+            MouseEventArgs e)
+        {
+            CloseButton.Visibility =
+                Visibility.Visible;
 
-    EditButtons.Visibility =
-        Visibility.Visible;
-}
+            EditButtons.Visibility =
+                Visibility.Visible;
+
+            NoteStore store = ((App)Application.Current).Store;
+            if (Data.StackId != null &&
+                store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack) &&
+                stack.NoteIds.Count > 1)
+            {
+                StackNavigationBar.Visibility =
+                    Visibility.Visible;
+            }
+        }
 
 
         private void Note_MouseLeave(
-    object sender,
-    MouseEventArgs e)
-{
-    if (!isRotating &&
-        !isMoving &&
-        !CloseButton.IsMouseOver)
-    {
-        CloseButton.Visibility =
-            Visibility.Collapsed;
-    }
+            object sender,
+            MouseEventArgs e)
+        {
+            if (!isRotating &&
+                !isMoving &&
+                !CloseButton.IsMouseOver)
+            {
+                CloseButton.Visibility =
+                    Visibility.Collapsed;
+            }
 
-    if (!isRotating &&
-        !isMoving &&
-        !CloseButton.IsMouseOver)
-    {
-        EditButtons.Visibility =
-            Visibility.Collapsed;
-    }
-}
+            if (!isRotating &&
+                !isMoving &&
+                !CloseButton.IsMouseOver)
+            {
+                EditButtons.Visibility =
+                    Visibility.Collapsed;
+            }
+
+            if (!isRotating &&
+                !isMoving &&
+                !StackNavigationBar.IsMouseOver)
+            {
+                StackNavigationBar.Visibility =
+                    Visibility.Collapsed;
+            }
+        }
+
+        private void StackNavigationBar_MouseEnter(
+            object sender,
+            MouseEventArgs e)
+        {
+            NoteStore store = ((App)Application.Current).Store;
+            if (Data.StackId != null &&
+                store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack) &&
+                stack.NoteIds.Count > 1)
+            {
+                StackNavigationBar.Visibility =
+                    Visibility.Visible;
+            }
+        }
+
+        private void StackNavigationBar_MouseLeave(
+            object sender,
+            MouseEventArgs e)
+        {
+            if (!Note.IsMouseOver)
+            {
+                StackNavigationBar.Visibility =
+                    Visibility.Collapsed;
+            }
+        }
 
 
         private void CloseButton_MouseEnter(
@@ -727,6 +810,7 @@ private void DeleteButton_Click(
     store.DeletedNotes[Data.Id] =
         Data;
 
+    AppUndoManager.PushAction(new DeleteNoteUndoAction { NoteId = Data.Id });
 
     // -----------------------------------------------------
     // Հեռացնում ենք գործող թերթիկների պահոցից
@@ -755,169 +839,332 @@ private void DeleteButton_Click(
         // ՓԱԿԵԼ
         // =========================================================
 
-        private void CloseButton_Click(
-    object sender,
-    RoutedEventArgs e)
-{
-    Data.IsClosed = true;
-
-    SaveCurrentState();
-
-    Close();
-}
-
-
-private void CloseMenu_Click(
-    object sender,
-    RoutedEventArgs e)
-{
-    Data.IsClosed = true;
-
-    SaveCurrentState();
-
-    Close();
-}
-
-
-protected override void OnClosing(
-    System.ComponentModel.CancelEventArgs e)
-{
-    // Սա ներառում է նաեւ ծրագրային Close()-ը (օր.՝
-    // «Փակել բոլոր թերթիկները»)։ Ջնջման դեպքում տվյալն
-    // արդեն հեռացվել ու պահպանվել է DeleteButton_Click-ում։
-    if (!isDeleting)
-    {
-        Data.IsClosed = true;
-        SaveCurrentState();
-    }
-
-    base.OnClosing(e);
-}
-
-private void ExportExcel_Click(
-    object sender,
-    RoutedEventArgs e)
-{
-    // Նախ պահում ենք բոլոր բաց թերթիկների
-    // տվյալների վերջին վիճակը։
-    foreach (Window window in Application.Current.Windows)
-    {
-        if (window is MainWindow noteWindow)
+        private bool IsNoteContentEmpty()
         {
-            noteWindow.SaveCurrentState();
-        }
-    }
+            if (NoteInkCanvas != null && NoteInkCanvas.Strokes.Count > 0)
+                return false;
 
-    NoteStore store =
-        ((App)Application.Current).Store;
+            TextRange range = new TextRange(
+                NoteText.Document.ContentStart,
+                NoteText.Document.ContentEnd);
 
-    Microsoft.Win32.SaveFileDialog dialog =
-        new Microsoft.Win32.SaveFileDialog
-        {
-            Title = "Արտահանել Excel",
-            Filter = "Excel ֆայլ (*.xlsx)|*.xlsx",
-            DefaultExt = ".xlsx",
-            AddExtension = true,
-            FileName =
-                "DesktopNotes_" +
-                DateTime.Now.ToString("yyyy-MM-dd_HH-mm")
-        };
+            string plainText = range.Text.Trim();
+            if (!string.IsNullOrEmpty(plainText))
+                return false;
 
-    if (dialog.ShowDialog() != true)
-        return;
-
-    try
-    {
-        using (var workbook =
-               new ClosedXML.Excel.XLWorkbook())
-        {
-            var worksheet =
-                workbook.Worksheets.Add("Թերթիկներ");
-
-            // Վերնագրեր
-            worksheet.Cell(1, 1).Value =
-                "Ստեղծման ամսաթիվ";
-
-            worksheet.Cell(1, 2).Value =
-                "Գրառում";
-
-            worksheet.Cell(1, 3).Value =
-                "Լուծված";
-
-            worksheet.Cell(1, 4).Value =
-                "Լուծման ամսաթիվ";
-
-            // Վերնագրերի ձեւավորում
-            var headerRange =
-                worksheet.Range(1, 1, 1, 4);
-
-            headerRange.Style.Font.Bold = true;
-
-            headerRange.Style.Fill.BackgroundColor =
-                ClosedXML.Excel.XLColor.LightGray;
-
-            // Թերթիկները՝ ստեղծման հերթականությամբ
-            var notes =
-                store.Notes.Values
-                    .OrderBy(note => note.CreatedAt)
-                    .ToList();
-
-            int row = 2;
-
-            foreach (NoteData note in notes)
+            foreach (Block block in NoteText.Document.Blocks)
             {
-                worksheet.Cell(row, 1).Value =
-                    note.CreatedAt;
-
-                worksheet.Cell(row, 1)
-                    .Style.DateFormat.Format =
-                    "dd.MM.yyyy HH:mm";
-
-                worksheet.Cell(row, 2).Value =
-                    note.Text;
-
-                worksheet.Cell(row, 3).Value =
-                    note.IsCompleted
-                        ? "Այո"
-                        : "";
-
-                if (note.CompletedDate.HasValue)
+                if (block is Paragraph p)
                 {
-                    worksheet.Cell(row, 4).Value =
-                        note.CompletedDate.Value;
+                    foreach (Inline inline in p.Inlines)
+                    {
+                        if (inline is InlineUIContainer || inline is Figure || inline is Floater)
+                            return false;
+                    }
+                }
+                else if (block is BlockUIContainer || block is Table || block is Section)
+                {
+                    return false;
+                }
+            }
 
-                    worksheet.Cell(row, 4)
-                        .Style.DateFormat.Format =
-                        "dd.MM.yyyy HH:mm";
+            return true;
+        }
+
+        private void CloseButton_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        private void CloseMenu_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        protected override void OnClosing(
+            System.ComponentModel.CancelEventArgs e)
+        {
+            if (!isDeleting)
+            {
+                if (IsNoteContentEmpty())
+                {
+                    isDeleting = true;
+                    NoteStore store =
+                        ((App)Application.Current).Store;
+
+                    if (Data.StackId != null &&
+                        store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
+                    {
+                        DetachFromStack(stack);
+                    }
+
+                    store.Notes.Remove(Data.Id);
+                    store.DeletedNotes.Remove(Data.Id);
+                    DnoteStorage.Save(store);
+                }
+                else
+                {
+                    Data.IsClosed = true;
+                    SaveCurrentState();
+                }
+            }
+
+            base.OnClosing(e);
+        }
+
+        private static MemoryStream? RenderFullNoteToStream(NoteData note)
+        {
+            try
+            {
+                double noteW = note.Width > 0 ? note.Width : 150;
+                double noteH = note.Height > 0 ? note.Height : 220;
+
+                int w = (int)Math.Max(120, noteW);
+                int h = (int)Math.Max(160, noteH);
+
+                var grid = new Grid
+                {
+                    Width = w,
+                    Height = h
+                };
+
+                // 1. Background paper
+                Color bgColor;
+                try
+                {
+                    bgColor = (Color)ColorConverter.ConvertFromString(note.NoteColor ?? "#FFF9A6");
+                }
+                catch
+                {
+                    bgColor = (Color)ColorConverter.ConvertFromString("#FFF9A6");
                 }
 
-                row++;
+                var border = new Border
+                {
+                    Width = w,
+                    Height = h,
+                    Background = new SolidColorBrush(bgColor),
+                    BorderBrush = new SolidColorBrush(Color.FromArgb(0x40, 0, 0, 0)),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(4)
+                };
+                grid.Children.Add(border);
+
+                // 2. RichTextBox for formatted text
+                var rtb = new RichTextBox
+                {
+                    Width = Math.Max(10, w - 8),
+                    Height = Math.Max(10, h - 20),
+                    Margin = new Thickness(4, 10, 4, 10),
+                    Background = Brushes.Transparent,
+                    BorderThickness = new Thickness(0),
+                    Padding = new Thickness(0),
+                    FontFamily = new FontFamily(note.FontFamily ?? "Arial"),
+                    FontSize = note.FontSize > 0 ? note.FontSize : 14,
+                    FontWeight = note.IsBold ? FontWeights.Bold : FontWeights.Normal,
+                    FontStyle = note.IsItalic ? FontStyles.Italic : FontStyles.Normal,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden
+                };
+
+                try
+                {
+                    Color txtColor = (Color)ColorConverter.ConvertFromString(note.TextColor ?? "#000000");
+                    rtb.Foreground = new SolidColorBrush(txtColor);
+                }
+                catch
+                {
+                    rtb.Foreground = Brushes.Black;
+                }
+
+                if (!string.IsNullOrEmpty(note.RtfContent))
+                {
+                    try
+                    {
+                        using var rtfStream = new MemoryStream(Encoding.UTF8.GetBytes(note.RtfContent));
+                        var range = new TextRange(rtb.Document.ContentStart, rtb.Document.ContentEnd);
+                        range.Load(rtfStream, DataFormats.Rtf);
+                    }
+                    catch
+                    {
+                        rtb.Document.Blocks.Clear();
+                        rtb.Document.Blocks.Add(new Paragraph(new Run(note.Text ?? "")));
+                    }
+                }
+                else
+                {
+                    rtb.Document.Blocks.Clear();
+                    rtb.Document.Blocks.Add(new Paragraph(new Run(note.Text ?? "")));
+                }
+
+                grid.Children.Add(rtb);
+
+                // 3. InkCanvas for pencil strokes
+                if (!string.IsNullOrEmpty(note.InkData))
+                {
+                    try
+                    {
+                        byte[] inkBytes = Convert.FromBase64String(note.InkData);
+                        using var inkMs = new MemoryStream(inkBytes);
+                        var strokes = new StrokeCollection(inkMs);
+                        if (strokes.Count > 0)
+                        {
+                            var inkCanvas = new InkCanvas
+                            {
+                                Width = Math.Max(10, w - 8),
+                                Height = Math.Max(10, h - 20),
+                                Margin = new Thickness(4, 10, 4, 10),
+                                Background = Brushes.Transparent,
+                                IsHitTestVisible = false,
+                                EditingMode = InkCanvasEditingMode.None,
+                                Strokes = strokes
+                            };
+                            grid.Children.Add(inkCanvas);
+                        }
+                    }
+                    catch { }
+                }
+
+                grid.Measure(new Size(w, h));
+                grid.Arrange(new Rect(0, 0, w, h));
+                grid.UpdateLayout();
+
+                var renderBmp = new RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32);
+                renderBmp.Render(grid);
+
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(renderBmp));
+                var outStream = new MemoryStream();
+                encoder.Save(outStream);
+                outStream.Position = 0;
+                return outStream;
             }
-
-            // Տեքստի տեղափոխում հաջորդ տող
-            worksheet.Column(2)
-                .Style.Alignment.WrapText = true;
-
-            // Սյունակների լայնությունը
-            worksheet.Column(1).Width = 20;
-            worksheet.Column(2).Width = 60;
-            worksheet.Column(3).Width = 12;
-            worksheet.Column(4).Width = 20;
-
-            // Ֆիլտր
-            if (row > 1)
+            catch
             {
-                worksheet.Range(
-                    1, 1,
-                    row - 1, 4)
-                    .SetAutoFilter();
+                return null;
+            }
+        }
+
+        private void ExportExcel_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            // Նախ պահում ենք բոլոր բաց թերթիկների
+            // տվյալների վերջին վիճակը։
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window is MainWindow noteWindow)
+                {
+                    noteWindow.SaveCurrentState();
+                }
             }
 
-            // Վերնագիրը միշտ տեսանելի
-            worksheet.SheetView.FreezeRows(1);
+            NoteStore store =
+                ((App)Application.Current).Store;
 
-            workbook.SaveAs(dialog.FileName);
-        }
+            Microsoft.Win32.SaveFileDialog dialog =
+                new Microsoft.Win32.SaveFileDialog
+                {
+                    Title = "Արտահանել Excel",
+                    Filter = "Excel ֆայլ (*.xlsx)|*.xlsx",
+                    DefaultExt = ".xlsx",
+                    AddExtension = true,
+                    FileName =
+                        "DesktopNotes_" +
+                        DateTime.Now.ToString("yyyy-MM-dd_HH-mm")
+                };
+
+            if (dialog.ShowDialog() != true)
+                return;
+
+            try
+            {
+                using (var workbook =
+                       new ClosedXML.Excel.XLWorkbook())
+                {
+                    var worksheet =
+                        workbook.Worksheets.Add("Թերթիկներ");
+
+                    // Վերնագրեր
+                    worksheet.Cell(1, 1).Value = "Ստեղծման ամսաթիվ";
+                    worksheet.Cell(1, 2).Value = "Գրառում";
+                    worksheet.Cell(1, 3).Value = "Նկար";
+                    worksheet.Cell(1, 4).Value = "Լուծված";
+                    worksheet.Cell(1, 5).Value = "Լուծման ամսաթիվ";
+
+                    // Վերնագրերի ձեւավորում
+                    var headerRange = worksheet.Range(1, 1, 1, 5);
+                    headerRange.Style.Font.Bold = true;
+                    headerRange.Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.LightGray;
+                    headerRange.Style.Alignment.Horizontal = ClosedXML.Excel.XLAlignmentHorizontalValues.Center;
+
+                    // Թերթիկները՝ ստեղծման հերթականությամբ
+                    var notes = store.Notes.Values
+                        .OrderBy(note => note.CreatedAt)
+                        .ToList();
+
+                    int row = 2;
+
+                    foreach (NoteData note in notes)
+                    {
+                        worksheet.Cell(row, 1).Value = note.CreatedAt;
+                        worksheet.Cell(row, 1).Style.DateFormat.Format = "dd.MM.yyyy HH:mm";
+
+                        worksheet.Cell(row, 2).Value = note.Text;
+
+                        // Սյունակ 3. Թերթիկի ամբողջական միասնական պատկերը (գրառում + մատիտ)
+                        var imgStream = RenderFullNoteToStream(note);
+                        if (imgStream != null)
+                        {
+                            worksheet.Row(row).Height = 85;
+
+                            int targetH = 105;
+                            double aspect = (note.Width > 0 ? note.Width : 150) / (note.Height > 0 ? note.Height : 220);
+                            int targetW = Math.Min(140, (int)(targetH * aspect));
+
+                            worksheet.AddPicture(imgStream, $"Picture{row}")
+                                     .MoveTo(worksheet.Cell(row, 3), 4, 3)
+                                     .WithSize(targetW, targetH);
+                        }
+
+                        worksheet.Cell(row, 4).Value = note.IsCompleted ? "Այո" : "";
+                        worksheet.Cell(row, 4).Style.Alignment.Horizontal = ClosedXML.Excel.XLAlignmentHorizontalValues.Center;
+
+                        if (note.CompletedDate.HasValue)
+                        {
+                            worksheet.Cell(row, 5).Value = note.CompletedDate.Value;
+                            worksheet.Cell(row, 5).Style.DateFormat.Format = "dd.MM.yyyy HH:mm";
+                        }
+
+                        row++;
+                    }
+
+                    // Տեքստի տեղափոխում հաջորդ տող և ուղղահայաց կենտրոնադրում
+                    worksheet.Column(2).Style.Alignment.WrapText = true;
+                    worksheet.Columns(1, 5).Style.Alignment.Vertical = ClosedXML.Excel.XLAlignmentVerticalValues.Center;
+
+                    // Սյունակների լայնությունը
+                    worksheet.Column(1).Width = 20;
+                    worksheet.Column(2).Width = 45;
+                    worksheet.Column(3).Width = 24;
+                    worksheet.Column(4).Width = 12;
+                    worksheet.Column(5).Width = 20;
+
+                    // Ֆիլտր
+                    if (row > 1)
+                    {
+                        worksheet.Range(1, 1, row - 1, 5).SetAutoFilter();
+                    }
+
+                    // Վերնագիրը միշտ տեսանելի
+                    worksheet.SheetView.FreezeRows(1);
+
+                    workbook.SaveAs(dialog.FileName);
+                }
 
         MessageBox.Show(
             "Excel ֆայլը հաջողությամբ ստեղծվեց։",
@@ -935,122 +1182,14 @@ private void ExportExcel_Click(
 }
 
         private void UndoDelete_Click(
-    object sender,
-    RoutedEventArgs e)
-{
-    NoteStore store =
-        ((App)Application.Current).Store;
-
-    if (store.DeletedNotes.Count == 0)
-        return;
-
-
-    // -----------------------------------------------------
-    // Վերցնում ենք վերջին ջնջված թերթիկը
-    // -----------------------------------------------------
-
-    Guid id =
-        new List<Guid>(
-            store.DeletedNotes.Keys)[
-                store.DeletedNotes.Count - 1];
-
-    NoteData restoredData =
-        store.DeletedNotes[id];
-
-
-    // -----------------------------------------------------
-    // Վերադարձնում ենք տվյալը հիմնական պահոց
-    // -----------------------------------------------------
-
-    store.DeletedNotes.Remove(id);
-
-    store.Notes[id] =
-        restoredData;
-
-
-    // -----------------------------------------------------
-    // Ստեղծում ենք պատուհանը՝ արդեն գոյություն ունեցող տվյալով
-    // -----------------------------------------------------
-
-    MainWindow restoredNote =
-        new MainWindow(restoredData);
-
-
-    // -----------------------------------------------------
-    // Վերականգնում ենք թերթիկի տեսողական հատկությունները
-    // -----------------------------------------------------
-
-    restoredNote.Note.Width =
-        restoredData.Width;
-
-    restoredNote.Note.Height =
-        restoredData.Height;
-
-    restoredNote.Left =
-        restoredData.Left;
-
-    restoredNote.Top =
-        restoredData.Top;
-
-    restoredNote.NoteRotation.Angle =
-        restoredData.Rotation;
-
-    restoredNote.Note.Background =
-        new SolidColorBrush(
-            (Color)ColorConverter.ConvertFromString(
-                restoredData.NoteColor));
-
-    restoredNote.NoteText.FontFamily =
-        new FontFamily(
-            restoredData.FontFamily);
-
-    restoredNote.NoteText.FontSize =
-        restoredData.FontSize;
-
-    restoredNote.NoteText.FontWeight =
-        restoredData.IsBold
-            ? FontWeights.Bold
-            : FontWeights.Normal;
-
-    restoredNote.NoteText.FontStyle =
-        restoredData.IsItalic
-            ? FontStyles.Italic
-            : FontStyles.Normal;
-
-
-    // -----------------------------------------------------
-    // Վերականգնում ենք տեքստը
-    // -----------------------------------------------------
-
-    using (MemoryStream stream =
-       new MemoryStream(
-           Encoding.UTF8.GetBytes(
-               restoredData.RtfContent)))
-{
-    TextRange range =
-        new TextRange(
-            restoredNote.NoteText.Document.ContentStart,
-            restoredNote.NoteText.Document.ContentEnd);
-
-    range.Load(
-        stream,
-        DataFormats.Rtf);
-}
-
-
-    // -----------------------------------------------------
-    // Ցուցադրում ենք
-    // -----------------------------------------------------
-
-    restoredNote.ShowInTaskbar =
-        false;
-
-    restoredNote.Show();
-
-    restoredNote.Activate();
-
-    SaveCurrentState();
-}
+            object sender,
+            RoutedEventArgs e)
+        {
+            if (AppUndoManager.CanUndo)
+            {
+                AppUndoManager.PerformUndo();
+            }
+        }
 
 
         // =========================================================
@@ -1094,13 +1233,23 @@ private void ExportExcel_Click(
                 ((App)Application.Current).Store;
 
             UndoDeleteMenuItem.IsEnabled =
-                store.DeletedNotes.Count > 0;
+                AppUndoManager.CanUndo;
+
+            UndoDeleteMenuItem.Header =
+                AppUndoManager.CurrentUndoDescription;
 
             PinMenuItem.Header =
                 Data.IsPinned ? "Ապագամել" : "Գամել (Ամենավերևում)";
 
+            RotationOriginTopCenterMenuItem.IsChecked = (store.RotationOrigin != "TopLeft");
+            RotationOriginTopLeftMenuItem.IsChecked = (store.RotationOrigin == "TopLeft");
+
+            PencilMenuItem.IsChecked = isPencilActive;
+            ClearInkMenuItem.IsEnabled = (NoteInkCanvas.Strokes.Count > 0);
+
             bool inStack = Data.StackId != null && store.Stacks.ContainsKey(Data.StackId.Value);
             ConvertToStackMenuItem.Visibility = inStack ? Visibility.Collapsed : Visibility.Visible;
+            DetachFromStackMenuItem.Visibility = inStack ? Visibility.Visible : Visibility.Collapsed;
         }
 
 
@@ -1118,7 +1267,7 @@ private void ExportExcel_Click(
         {
             Point mouseScreen =
                 PointToScreen(
-                    e.GetPosition(MoveArea));
+                    e.GetPosition(this));
 
             moveStartMouseScreen =
                 mouseScreen;
@@ -1166,7 +1315,7 @@ private void ExportExcel_Click(
 
             Point mouseScreen =
                 PointToScreen(
-                    e.GetPosition(MoveArea));
+                    e.GetPosition(this));
 
             double deltaX =
                 mouseScreen.X -
@@ -1291,6 +1440,7 @@ private void ExportExcel_Click(
             while (current != null)
             {
                 if (current == NoteText ||
+                    current == NoteInkCanvas ||
                     current == CloseButton ||
                     current == MoveArea ||
                     current == ResizeGrip ||
@@ -1397,16 +1547,15 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
 
             Point mouse =
                 PointToScreen(
-                    e.GetPosition(MainGrid));
+                    e.GetPosition(this));
 
-            Point topLeft =
-                Note.PointToScreen(
-                    new Point(0, 0));
+            Point center =
+                GetRotationCenterScreen();
 
             double currentAngle =
                 GetAngle(
                     mouse,
-                    topLeft);
+                    center);
 
             double difference =
                 NormalizeAngle(
@@ -1479,14 +1628,24 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
             if (!isResizing)
                 return;
 
+            NoteStore store = ((App)Application.Current).Store;
             Point currentPos = e.GetPosition(Note);
-            double newWidth = Math.Max(130, currentPos.X);
+            double newWidth = Math.Max(140, currentPos.X);
             double newHeight = Math.Max(80, currentPos.Y);
+
+            double oldWidth = Note.Width;
+            double deltaWidth = newWidth - oldWidth;
 
             Note.Width = newWidth;
             Note.Height = newHeight;
             Data.Width = newWidth;
             Data.Height = newHeight;
+
+            if (store.RotationOrigin != "TopLeft" && Math.Abs(deltaWidth) > 0.001)
+            {
+                Left -= deltaWidth / 2.0;
+                Data.Left = Left;
+            }
 
             Width = Math.Max(Width, newWidth + 600);
             Height = Math.Max(Height, newHeight + 600);
@@ -1502,11 +1661,451 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
                 return;
 
             isResizing = false;
-            ResizeGrip.ReleaseMouseCapture();
+            if (ResizeGrip.IsMouseCaptured)
+                ResizeGrip.ReleaseMouseCapture();
 
             UpdateDataFromWindow();
+
+            if (Data.StackId != null && ((App)Application.Current).Store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
+            {
+                ApplyStackAlignment(stack, this);
+            }
+
             DnoteStorage.Save(((App)Application.Current).Store);
             e.Handled = true;
+        }
+
+
+        // =========================================================
+        // ՄԱՏԻՏԻ ԳՈՐԾԻՔ (PENCIL / INK OVERLAY)
+        // =========================================================
+
+        private static Cursor? cachedPencilCursor;
+        private static Cursor? cachedEraserCursor;
+        private static Color cachedPencilColor;
+
+        private static Cursor CreateCursorFromBitmap(System.Drawing.Bitmap bmp, int xHotSpot, int yHotSpot)
+        {
+            using var ms = new MemoryStream();
+            using var pngMs = new MemoryStream();
+            bmp.Save(pngMs, System.Drawing.Imaging.ImageFormat.Png);
+            byte[] pngBytes = pngMs.ToArray();
+
+            using var bw = new BinaryWriter(ms);
+            // ICONDIR
+            bw.Write((short)0); // Reserved
+            bw.Write((short)2); // Type 2 = CURSOR
+            bw.Write((short)1); // Count = 1
+
+            // ICONDIRENTRY
+            bw.Write((byte)bmp.Width);
+            bw.Write((byte)bmp.Height);
+            bw.Write((byte)0); // Color count
+            bw.Write((byte)0); // Reserved
+            bw.Write((short)xHotSpot); // Hotspot X
+            bw.Write((short)yHotSpot); // Hotspot Y
+            bw.Write((int)pngBytes.Length); // Image size
+            bw.Write((int)22); // Image offset (header size = 6 + 16 = 22)
+
+            // Image data (PNG)
+            bw.Write(pngBytes);
+            bw.Flush();
+
+            ms.Position = 0;
+            return new Cursor(ms);
+        }
+
+        private static Cursor GetPencilCursor(bool isEraser, Color color)
+        {
+            if (isEraser && cachedEraserCursor != null && cachedPencilColor == color)
+                return cachedEraserCursor;
+            if (!isEraser && cachedPencilCursor != null && cachedPencilColor == color)
+                return cachedPencilCursor;
+
+            using var bmp = new System.Drawing.Bitmap(32, 32);
+            using (var g = System.Drawing.Graphics.FromImage(bmp))
+            {
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                g.Clear(System.Drawing.Color.Transparent);
+
+                var c = System.Drawing.Color.FromArgb(color.R, color.G, color.B);
+                using var brushBody = new System.Drawing.SolidBrush(c);
+
+                if (!isEraser)
+                {
+                    // Sleek, compact 15px pencil matching toolbar icon
+                    // Tip is at (1, 15)
+                    // Lead tip
+                    g.FillPolygon(System.Drawing.Brushes.Black, new System.Drawing.PointF[] {
+                        new System.Drawing.PointF(1, 15), new System.Drawing.PointF(1, 12.5f), new System.Drawing.PointF(3.5f, 15)
+                    });
+                    // Wood cone
+                    g.FillPolygon(System.Drawing.Brushes.BurlyWood, new System.Drawing.PointF[] {
+                        new System.Drawing.PointF(1, 12.5f), new System.Drawing.PointF(3.5f, 15), new System.Drawing.PointF(5.5f, 13.5f), new System.Drawing.PointF(3, 11)
+                    });
+                    // Body (filled with active pencil color!)
+                    g.FillPolygon(brushBody, new System.Drawing.PointF[] {
+                        new System.Drawing.PointF(3, 11), new System.Drawing.PointF(5.5f, 13.5f), new System.Drawing.PointF(12.5f, 6.5f), new System.Drawing.PointF(10, 4)
+                    });
+                    // Ferrule (silver band)
+                    g.FillPolygon(System.Drawing.Brushes.Silver, new System.Drawing.PointF[] {
+                        new System.Drawing.PointF(10, 4), new System.Drawing.PointF(12.5f, 6.5f), new System.Drawing.PointF(14.5f, 4.5f), new System.Drawing.PointF(12, 2)
+                    });
+                    // Eraser cap (pink)
+                    g.FillPolygon(System.Drawing.Brushes.DeepPink, new System.Drawing.PointF[] {
+                        new System.Drawing.PointF(12, 2), new System.Drawing.PointF(14.5f, 4.5f), new System.Drawing.PointF(16, 3), new System.Drawing.PointF(13.5f, 0.5f)
+                    });
+
+                    // Crisp black outline
+                    g.DrawPolygon(System.Drawing.Pens.Black, new System.Drawing.PointF[] {
+                        new System.Drawing.PointF(1, 15), new System.Drawing.PointF(1, 12.5f), new System.Drawing.PointF(3, 11),
+                        new System.Drawing.PointF(10, 4), new System.Drawing.PointF(12, 2), new System.Drawing.PointF(13.5f, 0.5f),
+                        new System.Drawing.PointF(16, 3), new System.Drawing.PointF(14.5f, 4.5f), new System.Drawing.PointF(12.5f, 6.5f),
+                        new System.Drawing.PointF(5.5f, 13.5f), new System.Drawing.PointF(3.5f, 15)
+                    });
+                }
+                else
+                {
+                    // 180° Inverted: Eraser pink tip at (1, 15)
+                    // Eraser (pink)
+                    g.FillPolygon(System.Drawing.Brushes.DeepPink, new System.Drawing.PointF[] {
+                        new System.Drawing.PointF(1, 15), new System.Drawing.PointF(1, 12.5f), new System.Drawing.PointF(3.5f, 15), new System.Drawing.PointF(3, 11)
+                    });
+                    // Ferrule (silver band)
+                    g.FillPolygon(System.Drawing.Brushes.Silver, new System.Drawing.PointF[] {
+                        new System.Drawing.PointF(1, 12.5f), new System.Drawing.PointF(3.5f, 15), new System.Drawing.PointF(5.5f, 13.5f), new System.Drawing.PointF(3, 11)
+                    });
+                    // Body (filled with active pencil color!)
+                    g.FillPolygon(brushBody, new System.Drawing.PointF[] {
+                        new System.Drawing.PointF(3, 11), new System.Drawing.PointF(5.5f, 13.5f), new System.Drawing.PointF(12.5f, 6.5f), new System.Drawing.PointF(10, 4)
+                    });
+                    // Wood cone
+                    g.FillPolygon(System.Drawing.Brushes.BurlyWood, new System.Drawing.PointF[] {
+                        new System.Drawing.PointF(10, 4), new System.Drawing.PointF(12.5f, 6.5f), new System.Drawing.PointF(14.5f, 4.5f), new System.Drawing.PointF(12, 2)
+                    });
+                    // Lead tip at far end
+                    g.FillPolygon(System.Drawing.Brushes.Black, new System.Drawing.PointF[] {
+                        new System.Drawing.PointF(12, 2), new System.Drawing.PointF(14.5f, 4.5f), new System.Drawing.PointF(16, 0.5f)
+                    });
+
+                    // Crisp black outline
+                    g.DrawPolygon(System.Drawing.Pens.Black, new System.Drawing.PointF[] {
+                        new System.Drawing.PointF(1, 15), new System.Drawing.PointF(1, 12.5f), new System.Drawing.PointF(3, 11),
+                        new System.Drawing.PointF(10, 4), new System.Drawing.PointF(12, 2), new System.Drawing.PointF(16, 0.5f),
+                        new System.Drawing.PointF(14.5f, 4.5f), new System.Drawing.PointF(12.5f, 6.5f),
+                        new System.Drawing.PointF(5.5f, 13.5f), new System.Drawing.PointF(3.5f, 15)
+                    });
+                }
+            }
+
+            Cursor cur = CreateCursorFromBitmap(bmp, 1, 15);
+
+            if (isEraser)
+            {
+                cachedEraserCursor = cur;
+                cachedPencilColor = color;
+            }
+            else
+            {
+                cachedPencilCursor = cur;
+                cachedPencilColor = color;
+            }
+
+            return cur;
+        }
+
+        private bool isPencilActive = false;
+        private bool isEraserActive = false;
+
+        public void SaveInkToData()
+        {
+            if (NoteInkCanvas != null && NoteInkCanvas.Strokes.Count > 0)
+            {
+                using MemoryStream ms = new MemoryStream();
+                NoteInkCanvas.Strokes.Save(ms);
+                Data.InkData = Convert.ToBase64String(ms.ToArray());
+            }
+            else
+            {
+                Data.InkData = string.Empty;
+            }
+        }
+
+        public void LoadInkFromData()
+        {
+            if (NoteInkCanvas == null) return;
+
+            if (!string.IsNullOrEmpty(Data.InkData))
+            {
+                try
+                {
+                    byte[] bytes = Convert.FromBase64String(Data.InkData);
+                    using MemoryStream ms = new MemoryStream(bytes);
+                    NoteInkCanvas.Strokes = new StrokeCollection(ms);
+                }
+                catch
+                {
+                    NoteInkCanvas.Strokes = new StrokeCollection();
+                }
+            }
+            else
+            {
+                NoteInkCanvas.Strokes = new StrokeCollection();
+            }
+
+            NoteInkCanvas.StrokeCollected -= NoteInkCanvas_StrokeCollected;
+            NoteInkCanvas.StrokeCollected += NoteInkCanvas_StrokeCollected;
+            NoteInkCanvas.StrokeErasing -= NoteInkCanvas_StrokeErasing;
+            NoteInkCanvas.StrokeErasing += NoteInkCanvas_StrokeErasing;
+            NoteInkCanvas.StrokeErased -= NoteInkCanvas_StrokeErased;
+            NoteInkCanvas.StrokeErased += NoteInkCanvas_StrokeErased;
+            NoteInkCanvas.PreviewMouseMove -= NoteInkCanvas_PreviewMouseMove;
+            NoteInkCanvas.PreviewMouseMove += NoteInkCanvas_PreviewMouseMove;
+        }
+
+        private void NoteInkCanvas_StrokeCollected(object? sender, InkCanvasStrokeCollectedEventArgs e)
+        {
+            AppUndoManager.PushAction(new StrokeAddUndoAction(Data.Id, e.Stroke));
+            SaveInkToData();
+            SaveCurrentState();
+        }
+
+        private void NoteInkCanvas_StrokeErasing(object? sender, InkCanvasStrokeErasingEventArgs e)
+        {
+            AppUndoManager.PushAction(new StrokeEraseUndoAction(Data.Id, e.Stroke));
+        }
+
+        private void NoteInkCanvas_StrokeErased(object? sender, RoutedEventArgs e)
+        {
+            SaveInkToData();
+            SaveCurrentState();
+        }
+
+        private void NoteInkCanvas_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (isPencilActive)
+            {
+                bool isCtrlHeld = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+                if (isCtrlHeld != isEraserActive)
+                {
+                    SetEraserMode(isCtrlHeld);
+                }
+            }
+        }
+
+        public void UpdatePencilDrawingAttributes()
+        {
+            if (NoteInkCanvas == null) return;
+
+            NoteStore store = ((App)Application.Current).Store;
+            Color color;
+            try
+            {
+                color = (Color)ColorConverter.ConvertFromString(store.PencilColor);
+            }
+            catch
+            {
+                color = Colors.Black;
+            }
+
+            double thickness = Math.Max(1, store.PencilThickness);
+
+            DrawingAttributes da = new DrawingAttributes
+            {
+                Color = color,
+                Width = thickness,
+                Height = thickness,
+                FitToCurve = true,
+                IgnorePressure = true
+            };
+            NoteInkCanvas.DefaultDrawingAttributes = da;
+
+            cachedPencilCursor = null; // Invalidate color cache
+            cachedEraserCursor = null;
+
+            if (isPencilActive)
+            {
+                if (isEraserActive)
+                {
+                    double eraserSize = Math.Max(2, thickness + 1);
+                    NoteInkCanvas.EraserShape = new RectangleStylusShape(eraserSize, eraserSize);
+                    NoteInkCanvas.Cursor = GetPencilCursor(true, color);
+                }
+                else
+                {
+                    NoteInkCanvas.Cursor = GetPencilCursor(false, color);
+                }
+            }
+        }
+
+        public void SetEraserMode(bool active)
+        {
+            if (!isPencilActive) return;
+            if (isEraserActive == active) return;
+
+            isEraserActive = active;
+            NoteStore store = ((App)Application.Current).Store;
+            Color color;
+            try
+            {
+                color = (Color)ColorConverter.ConvertFromString(store.PencilColor);
+            }
+            catch
+            {
+                color = Colors.Black;
+            }
+
+            if (isEraserActive)
+            {
+                NoteInkCanvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
+                double eraserSize = Math.Max(2, store.PencilThickness + 1);
+                NoteInkCanvas.EraserShape = new RectangleStylusShape(eraserSize, eraserSize);
+                NoteInkCanvas.Cursor = GetPencilCursor(true, color);
+            }
+            else
+            {
+                NoteInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
+                NoteInkCanvas.Cursor = GetPencilCursor(false, color);
+            }
+        }
+
+        public void TogglePencilMode(bool? forceState = null)
+        {
+            isPencilActive = forceState ?? !isPencilActive;
+
+            if (isPencilActive)
+            {
+                isEraserActive = false;
+                UpdatePencilDrawingAttributes();
+                NoteInkCanvas.IsHitTestVisible = true;
+                NoteInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
+
+                NoteStore store = ((App)Application.Current).Store;
+                Color color;
+                try
+                {
+                    color = (Color)ColorConverter.ConvertFromString(store.PencilColor);
+                }
+                catch
+                {
+                    color = Colors.Black;
+                }
+                NoteInkCanvas.Cursor = GetPencilCursor(false, color);
+
+                QuickPencilButton.Background = GetNoteHoverBrush(0.70);
+                QuickPencilButton.BorderBrush = GetNoteHoverForeground();
+                QuickPencilButton.Foreground = GetNoteHoverForeground();
+            }
+            else
+            {
+                isEraserActive = false;
+                PencilColorPalettePopup.IsOpen = false;
+                NoteInkCanvas.EditingMode = InkCanvasEditingMode.None;
+                NoteInkCanvas.IsHitTestVisible = false;
+                NoteInkCanvas.Cursor = null;
+
+                QuickPencilButton.Background = Brushes.Transparent;
+                QuickPencilButton.BorderBrush = Brushes.Transparent;
+                QuickPencilButton.Foreground = (Brush?)TryFindResource("TextBrush") ?? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#555555"));
+            }
+
+            if (PencilMenuItem != null)
+            {
+                PencilMenuItem.IsChecked = isPencilActive;
+            }
+        }
+
+        private void QuickPencilButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!isPencilActive)
+            {
+                TogglePencilMode(true);
+                PencilColorPalettePopup.IsOpen = true;
+            }
+            else
+            {
+                if (PencilColorPalettePopup.IsOpen)
+                {
+                    // User clicked pencil button again while palette was open: close palette, accept current color and stay in pencil mode!
+                    PencilColorPalettePopup.IsOpen = false;
+                }
+                else
+                {
+                    TogglePencilMode(false);
+                }
+            }
+        }
+
+        private void TogglePencil_Click(object sender, RoutedEventArgs e)
+        {
+            TogglePencilMode();
+        }
+
+        private void ClearInk_Click(object sender, RoutedEventArgs e)
+        {
+            if (NoteInkCanvas.Strokes.Count > 0)
+            {
+                // Create undo action for clearing all strokes
+                Stroke[] allStrokes = NoteInkCanvas.Strokes.ToArray();
+                foreach (Stroke s in allStrokes)
+                {
+                    AppUndoManager.PushAction(new StrokeEraseUndoAction(Data.Id, s));
+                }
+                NoteInkCanvas.Strokes.Clear();
+                SaveInkToData();
+                SaveCurrentState();
+            }
+        }
+
+        private void PencilPaletteColor_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string hex)
+            {
+                NoteStore store = ((App)Application.Current).Store;
+                store.PencilColor = hex;
+                DnoteStorage.Save(store);
+
+                foreach (MainWindow window in Application.Current.Windows.OfType<MainWindow>())
+                {
+                    window.UpdatePencilDrawingAttributes();
+                }
+
+                PencilColorPalettePopup.IsOpen = false;
+            }
+        }
+
+        private void CustomPencilColor_Click(object sender, RoutedEventArgs e)
+        {
+            NoteStore store = ((App)Application.Current).Store;
+            using var dialog = new Forms.ColorDialog();
+
+            try
+            {
+                Color current = (Color)ColorConverter.ConvertFromString(store.PencilColor);
+                dialog.Color = System.Drawing.Color.FromArgb(current.R, current.G, current.B);
+            }
+            catch
+            {
+                dialog.Color = System.Drawing.Color.Black;
+            }
+
+            if (dialog.ShowDialog() == Forms.DialogResult.OK)
+            {
+                string hex = $"#{dialog.Color.R:X2}{dialog.Color.G:X2}{dialog.Color.B:X2}";
+                store.PencilColor = hex;
+                if (!store.CustomPencilColors.Contains(hex))
+                {
+                    store.CustomPencilColors.Add(hex);
+                }
+                DnoteStorage.Save(store);
+
+                foreach (MainWindow window in Application.Current.Windows.OfType<MainWindow>())
+                {
+                    window.UpdatePencilDrawingAttributes();
+                }
+
+                PencilColorPalettePopup.IsOpen = false;
+            }
         }
 
 
@@ -1514,21 +2113,77 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
         // ROTATION START
         // =========================================================
 
+        public void EnsureOnScreen()
+        {
+            double screenLeft = SystemParameters.VirtualScreenLeft;
+            double screenTop = SystemParameters.VirtualScreenTop;
+            double screenWidth = SystemParameters.VirtualScreenWidth;
+            double screenHeight = SystemParameters.VirtualScreenHeight;
+
+            double noteVisualLeft = Left + 300;
+            double noteVisualTop = Top + 300;
+            double noteW = Note.Width > 0 ? Note.Width : 150;
+            double noteH = Note.Height > 0 ? Note.Height : 220;
+
+            bool isOffScreen = (noteVisualLeft + noteW < screenLeft + 50) ||
+                               (noteVisualLeft > screenLeft + screenWidth - 50) ||
+                               (noteVisualTop + noteH < screenTop + 50) ||
+                               (noteVisualTop > screenTop + screenHeight - 50);
+
+            if (isOffScreen)
+            {
+                double primaryW = SystemParameters.PrimaryScreenWidth;
+                double primaryH = SystemParameters.PrimaryScreenHeight;
+
+                Left = Math.Max(0, (primaryW - noteW) / 2.0 - 300);
+                Top = Math.Max(0, (primaryH - noteH) / 2.0 - 300);
+
+                Data.Left = Left;
+                Data.Top = Top;
+            }
+        }
+
+        public void UpdateRotationOrigin()
+        {
+            NoteStore store = ((App)Application.Current).Store;
+            if (store.RotationOrigin == "TopLeft")
+            {
+                Note.RenderTransformOrigin = new Point(0, 0);
+            }
+            else
+            {
+                Note.RenderTransformOrigin = new Point(0.5, 0);
+            }
+        }
+
+        private Point GetRotationCenterScreen()
+        {
+            NoteStore store = ((App)Application.Current).Store;
+            double w = Note.ActualWidth > 0 ? Note.ActualWidth : Note.Width;
+            if (store.RotationOrigin == "TopLeft")
+            {
+                return PointToScreen(new Point(300, 300));
+            }
+            else
+            {
+                return PointToScreen(new Point(300 + w / 2.0, 300));
+            }
+        }
+
         private void StartRotation(
             MouseButtonEventArgs e)
         {
             Point mouse =
                 PointToScreen(
-                    e.GetPosition(MainGrid));
+                    e.GetPosition(this));
 
-            Point topLeft =
-                Note.PointToScreen(
-                    new Point(0, 0));
+            Point center =
+                GetRotationCenterScreen();
 
             rotationStartAngle =
                 GetAngle(
                     mouse,
-                    topLeft);
+                    center);
 
             noteStartAngle =
                 NoteRotation.Angle;
@@ -1538,6 +2193,35 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
             Note.CaptureMouse();
 
             e.Handled = true;
+        }
+
+        private void RotationOriginTopCenter_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetGlobalRotationOrigin("TopCenter");
+        }
+
+        private void RotationOriginTopLeft_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetGlobalRotationOrigin("TopLeft");
+        }
+
+        public static void SetGlobalRotationOrigin(
+            string origin)
+        {
+            NoteStore store =
+                ((App)Application.Current).Store;
+
+            store.RotationOrigin = origin;
+            DnoteStorage.Save(store);
+
+            foreach (MainWindow win in Application.Current.Windows.OfType<MainWindow>())
+            {
+                win.UpdateRotationOrigin();
+            }
         }
 
 
@@ -1639,6 +2323,7 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
         {
             Data.NoteColor = hex;
             Note.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
+            UpdatePinVisual();
             UpdateDataFromWindow();
             DnoteStorage.Save(((App)Application.Current).Store);
         }
@@ -2055,20 +2740,71 @@ private void CompleteButton_MouseLeave(
             object sender,
             RoutedEventArgs e)
         {
-            UnpinNote();
+            TogglePin_Click(sender, e);
         }
 
         private void TogglePin_Click(
             object sender,
             RoutedEventArgs e)
         {
-            if (Data.IsPinned)
+            bool newPinned = !Data.IsPinned;
+            NoteStore store = ((App)Application.Current).Store;
+
+            if (Data.StackId != null && store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
             {
-                UnpinNote();
+                foreach (Guid noteId in stack.NoteIds)
+                {
+                    if (store.Notes.TryGetValue(noteId, out NoteData? noteData))
+                    {
+                        noteData.IsPinned = newPinned;
+                    }
+                }
+
+                foreach (MainWindow win in Application.Current.Windows.OfType<MainWindow>())
+                {
+                    if (stack.NoteIds.Contains(win.NoteId))
+                    {
+                        if (newPinned)
+                            win.PinNote();
+                        else
+                            win.UnpinNote();
+                    }
+                }
+
+                DnoteStorage.Save(store);
             }
             else
             {
-                PinNote();
+                if (newPinned)
+                    PinNote();
+                else
+                    UnpinNote();
+            }
+        }
+
+        public void UpdatePinVisual()
+        {
+            if (Data.IsPinned)
+            {
+                if (Data.StackId != null)
+                {
+                    NoteStore store = ((App)Application.Current).Store;
+                    if (store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
+                    {
+                        if (stack.CurrentNoteId != Data.Id)
+                        {
+                            PinButton.Visibility = Visibility.Collapsed;
+                            return;
+                        }
+                    }
+                }
+
+                PinButton.Tag = PinImageGenerator.GetPinImageForColor(Data.NoteColor);
+                PinButton.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                PinButton.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -2076,7 +2812,7 @@ private void CompleteButton_MouseLeave(
         {
             Data.IsPinned = true;
             Topmost = true;
-            PinButton.Visibility = Visibility.Visible;
+            UpdatePinVisual();
             PinMenuItem.Header = "Ապագամել";
             SaveCurrentState();
         }
@@ -2085,7 +2821,7 @@ private void CompleteButton_MouseLeave(
         {
             Data.IsPinned = false;
             Topmost = false;
-            PinButton.Visibility = Visibility.Collapsed;
+            UpdatePinVisual();
             PinMenuItem.Header = "Գամել (Ամենավերևում)";
             SaveCurrentState();
         }
@@ -2099,10 +2835,54 @@ private void CompleteButton_MouseLeave(
             object sender,
             RoutedEventArgs e)
         {
-            NoteRotation.Angle = 0;
-            Data.Rotation = 0;
-            UpdateWindowSizeForRotation(false);
-            SaveCurrentState();
+            NoteStore store = ((App)Application.Current).Store;
+            Dictionary<Guid, double> previousAngles = new Dictionary<Guid, double>();
+
+            if (Data.StackId != null && store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
+            {
+                foreach (Guid noteId in stack.NoteIds)
+                {
+                    if (store.Notes.TryGetValue(noteId, out NoteData? noteData))
+                    {
+                        if (Math.Abs(noteData.Rotation) > 0.001)
+                        {
+                            previousAngles[noteId] = noteData.Rotation;
+                            noteData.Rotation = 0;
+                        }
+                    }
+                }
+
+                foreach (MainWindow win in Application.Current.Windows.OfType<MainWindow>())
+                {
+                    if (stack.NoteIds.Contains(win.NoteId))
+                    {
+                        win.NoteRotation.Angle = 0;
+                        win.Data.Rotation = 0;
+                        win.UpdateWindowSizeForRotation(false);
+                        win.SaveCurrentState();
+                    }
+                }
+
+                ApplyStackAlignment(stack);
+
+                DnoteStorage.Save(store);
+            }
+            else
+            {
+                if (Math.Abs(Data.Rotation) > 0.001)
+                {
+                    previousAngles[Data.Id] = Data.Rotation;
+                    NoteRotation.Angle = 0;
+                    Data.Rotation = 0;
+                    UpdateWindowSizeForRotation(false);
+                    SaveCurrentState();
+                }
+            }
+
+            if (previousAngles.Count > 0)
+            {
+                AppUndoManager.PushAction(new RotationResetUndoAction { PreviousAngles = previousAngles });
+            }
         }
 
 
@@ -2154,11 +2934,16 @@ private void CompleteButton_MouseLeave(
 
             if (Data.StackId != null &&
                 store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack) &&
-                stack.NoteIds.Count > 1 &&
-                stack.CurrentNoteId == Data.Id)
+                stack.NoteIds.Count > 1)
             {
-                StackNavigationBar.Visibility =
-                    Visibility.Visible;
+                if (IsActive || Note.IsMouseOver || StackNavigationBar.IsMouseOver)
+                {
+                    StackNavigationBar.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    StackNavigationBar.Visibility = Visibility.Collapsed;
+                }
 
                 int index =
                     stack.NoteIds.IndexOf(Data.Id);
@@ -2185,11 +2970,13 @@ private void CompleteButton_MouseLeave(
                 StackNavigationBar.Visibility =
                     Visibility.Collapsed;
             }
+
+            UpdatePinVisual();
         }
 
         private bool isNavigatingStack = false;
 
-        private void SetActiveStackNote(NoteStack stack, Guid noteId)
+        public void SetActiveStackNote(NoteStack stack, Guid noteId, string? buttonType = null)
         {
             if (isNavigatingStack) return;
             isNavigatingStack = true;
@@ -2217,7 +3004,7 @@ private void CompleteButton_MouseLeave(
 
                 openNotes = Application.Current.Windows.OfType<MainWindow>().ToArray();
 
-                // 2. Թարմացնում ենք տեսանելիությունը (ավելի նոր թերթիկները Collapsed, ընթացիկը և ավելի հիները Visible)
+                // 2. Թարմացնում ենք տեսանելիությունը և Z-Order-ը
                 for (int i = 0; i < stack.NoteIds.Count; i++)
                 {
                     Guid id = stack.NoteIds[i];
@@ -2231,6 +3018,11 @@ private void CompleteButton_MouseLeave(
                         else
                         {
                             w.Visibility = Visibility.Visible;
+                            IntPtr hwnd = new System.Windows.Interop.WindowInteropHelper(w).Handle;
+                            if (hwnd != IntPtr.Zero)
+                            {
+                                SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+                            }
                         }
                     }
                 }
@@ -2240,16 +3032,81 @@ private void CompleteButton_MouseLeave(
                 if (targetWin != null)
                 {
                     targetWin.Visibility = Visibility.Visible;
+                    IntPtr targetHwnd = new System.Windows.Interop.WindowInteropHelper(targetWin).Handle;
+                    if (targetHwnd != IntPtr.Zero)
+                    {
+                        SetWindowPos(targetHwnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+                    }
+
+                    targetWin.ApplyStackAlignment(stack, targetWin);
+                    targetWin.UpdateLayout();
                     targetWin.Activate();
                     targetWin.Focus();
-                }
 
-                // 4. Թարմացնում ենք UI-ները
-                foreach (MainWindow win in openNotes)
-                {
-                    if (stack.NoteIds.Contains(win.NoteId))
+                    // 4. Թարմացնում ենք UI-ները
+                    foreach (MainWindow win in openNotes)
                     {
-                        win.UpdateStackUI();
+                        if (stack.NoteIds.Contains(win.NoteId))
+                        {
+                            win.UpdateStackUI();
+                        }
+                    }
+
+                    targetWin.StackNavigationBar.Visibility = Visibility.Visible;
+
+                    if (buttonType != null)
+                    {
+                        targetWin.Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+                        {
+                            targetWin.UpdateLayout();
+                            targetWin.StackNavigationBar.Visibility = Visibility.Visible;
+
+                            Button? targetButton = buttonType switch
+                            {
+                                "Next" => targetWin.StackNextButton.IsEnabled ? targetWin.StackNextButton : targetWin.StackPrevButton,
+                                "Prev" => targetWin.StackPrevButton.IsEnabled ? targetWin.StackPrevButton : targetWin.StackNextButton,
+                                "First" => targetWin.StackFirstButton.IsEnabled ? targetWin.StackFirstButton : targetWin.StackNextButton,
+                                "Last" => targetWin.StackLastButton.IsEnabled ? targetWin.StackLastButton : targetWin.StackPrevButton,
+                                _ => null
+                            };
+
+                            if (targetButton != null)
+                            {
+                                targetButton.Focus();
+                                try
+                                {
+                                    double bw = targetButton.ActualWidth > 0 ? targetButton.ActualWidth : 14.0;
+                                    double bh = targetButton.ActualHeight > 0 ? targetButton.ActualHeight : 16.0;
+                                    Point buttonCenter = targetButton.PointToScreen(new Point(bw / 2.0, bh / 2.0));
+                                    SetCursorPos((int)Math.Round(buttonCenter.X), (int)Math.Round(buttonCenter.Y));
+                                }
+                                catch
+                                {
+                                    try
+                                    {
+                                        Point navCenter = targetWin.StackNavigationBar.PointToScreen(
+                                            new Point(targetWin.StackNavigationBar.ActualWidth / 2.0, targetWin.StackNavigationBar.ActualHeight / 2.0));
+                                        SetCursorPos((int)Math.Round(navCenter.X), (int)Math.Round(navCenter.Y));
+                                    }
+                                    catch { }
+                                }
+                            }
+                        }));
+                    }
+                    else
+                    {
+                        targetWin.Focus();
+                    }
+                }
+                else
+                {
+                    // 4. Թարմացնում ենք UI-ները
+                    foreach (MainWindow win in openNotes)
+                    {
+                        if (stack.NoteIds.Contains(win.NoteId))
+                        {
+                            win.UpdateStackUI();
+                        }
                     }
                 }
 
@@ -2265,18 +3122,96 @@ private void CompleteButton_MouseLeave(
             object sender,
             KeyEventArgs e)
         {
+            if (isPencilActive && (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl || e.SystemKey == Key.LeftCtrl || e.SystemKey == Key.RightCtrl))
+            {
+                SetEraserMode(true);
+            }
+
+            bool isCtrl = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+
+            if (isCtrl)
+            {
+                if (e.Key == Key.Z)
+                {
+                    if (isPencilActive)
+                    {
+                        if (AppUndoManager.CanUndo)
+                        {
+                            AppUndoManager.PerformUndo();
+                            e.Handled = true;
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        if (NoteText.IsFocused && NoteText.CanUndo)
+                        {
+                            return; // RichTextBox handles typing undo
+                        }
+
+                        if (AppUndoManager.CanUndo)
+                        {
+                            AppUndoManager.PerformUndo();
+                            e.Handled = true;
+                            return;
+                        }
+                    }
+                }
+                else if (e.Key == Key.N)
+                {
+                    NewNote_Click(sender, e);
+                    e.Handled = true;
+                    return;
+                }
+                else if (e.Key == Key.F)
+                {
+                    SearchNotes_Click(sender, e);
+                    e.Handled = true;
+                    return;
+                }
+                else if (e.Key == Key.W)
+                {
+                    CloseMenu_Click(sender, e);
+                    e.Handled = true;
+                    return;
+                }
+                else if (e.Key == Key.P)
+                {
+                    TogglePencilMode();
+                    e.Handled = true;
+                    return;
+                }
+            }
+
+            if (e.Key == Key.Escape && isPencilActive)
+            {
+                TogglePencilMode(false);
+                e.Handled = true;
+                return;
+            }
+
             if (Data.StackId != null)
             {
                 if (e.Key == Key.Left)
                 {
-                    NavigateStack(-1);
+                    NavigateStack(-1, "Prev");
                     e.Handled = true;
                 }
                 else if (e.Key == Key.Right)
                 {
-                    NavigateStack(1);
+                    NavigateStack(1, "Next");
                     e.Handled = true;
                 }
+            }
+        }
+
+        private void NoteWindow_PreviewKeyUp(
+            object sender,
+            KeyEventArgs e)
+        {
+            if (isPencilActive && (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl || e.SystemKey == Key.LeftCtrl || e.SystemKey == Key.RightCtrl))
+            {
+                SetEraserMode(false);
             }
         }
 
@@ -2284,21 +3219,21 @@ private void CompleteButton_MouseLeave(
             object sender,
             RoutedEventArgs e)
         {
-            NavigateStackAbsolute(0);
+            NavigateStackAbsolute(0, "First");
         }
 
         private void StackPrev_Click(
             object sender,
             RoutedEventArgs e)
         {
-            NavigateStack(-1);
+            NavigateStack(-1, "Prev");
         }
 
         private void StackNext_Click(
             object sender,
             RoutedEventArgs e)
         {
-            NavigateStack(1);
+            NavigateStack(1, "Next");
         }
 
         private void StackLast_Click(
@@ -2311,7 +3246,7 @@ private void CompleteButton_MouseLeave(
             if (Data.StackId != null &&
                 store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
             {
-                NavigateStackAbsolute(stack.NoteIds.Count - 1);
+                NavigateStackAbsolute(stack.NoteIds.Count - 1, "Last");
             }
         }
 
@@ -2338,7 +3273,8 @@ private void CompleteButton_MouseLeave(
         }
 
         private void NavigateStackAbsolute(
-            int targetIndex)
+            int targetIndex,
+            string? buttonType = null)
         {
             NoteStore store =
                 ((App)Application.Current).Store;
@@ -2352,11 +3288,12 @@ private void CompleteButton_MouseLeave(
             Guid targetNoteId =
                 stack.NoteIds[targetIndex];
 
-            SetActiveStackNote(stack, targetNoteId);
+            SetActiveStackNote(stack, targetNoteId, buttonType);
         }
 
         private void NavigateStack(
-            int step)
+            int step,
+            string? buttonType = null)
         {
             NoteStore store =
                 ((App)Application.Current).Store;
@@ -2366,11 +3303,15 @@ private void CompleteButton_MouseLeave(
                 return;
 
             int currentIndex =
-                stack.NoteIds.IndexOf(stack.CurrentNoteId ?? Data.Id);
+                stack.NoteIds.IndexOf(Data.Id);
 
-            if (currentIndex < 0) currentIndex = 0;
+            if (currentIndex < 0)
+                currentIndex = stack.NoteIds.IndexOf(stack.CurrentNoteId ?? Data.Id);
 
-            NavigateStackAbsolute(currentIndex + step);
+            if (currentIndex < 0)
+                currentIndex = 0;
+
+            NavigateStackAbsolute(currentIndex + step, buttonType);
         }
 
 
@@ -2433,12 +3374,23 @@ private void CompleteButton_MouseLeave(
             // Դասավորում ըստ ստեղծման ամսաթվի (հին -> նոր)
             notes = notes.OrderBy(n => n.CreatedAt).ToList();
 
+            // Հեռացնում ենք թերթիկների հին տրցակների գրառումները
+            HashSet<Guid> oldStackIds = notes
+                .Where(n => n.StackId != null)
+                .Select(n => n.StackId!.Value)
+                .ToHashSet();
+
+            foreach (Guid oldId in oldStackIds)
+            {
+                store.Stacks.Remove(oldId);
+            }
+
             NoteStack stack = new NoteStack
             {
                 Id = Guid.NewGuid(),
                 NoteIds = notes.Select(n => n.Id).ToList(),
                 CurrentNoteId = notes.Last().Id, // ամենանորը վերեւում
-                Alignment = store.StackAlignment ?? "TopLeft"
+                Alignment = (store.StackAlignment == "TopLeft" || string.IsNullOrEmpty(store.StackAlignment)) ? "TopCenter" : store.StackAlignment
             };
 
             store.Stacks[stack.Id] = stack;
@@ -2448,7 +3400,7 @@ private void CompleteButton_MouseLeave(
                 n.StackId = stack.Id;
             }
 
-            anchorWin.ApplyStackAlignment(stack);
+            anchorWin.ApplyStackAlignment(stack, anchorWin);
 
             // Բոլոր թերթիկները տեսանելի են տակից (եթե ավելի մեծ են կամ այլ անկյան տակ)
             foreach (MainWindow w in windowsToStack.OrderBy(win => notes.FindIndex(n => n.Id == win.Data.Id)))
@@ -2535,6 +3487,20 @@ private void CompleteButton_MouseLeave(
             DnoteStorage.Save(store);
         }
 
+        private void DetachFromStackMenu_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            NoteStore store =
+                ((App)Application.Current).Store;
+
+            if (Data.StackId != null &&
+                store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
+            {
+                DetachFromStack(stack);
+            }
+        }
+
 
         // =========================================================
         // ՏՐՑԱԿԻ ՀԱՎԱՍԱՐԵՑՈՒՄ
@@ -2607,7 +3573,8 @@ private void CompleteButton_MouseLeave(
         }
 
         public void ApplyStackAlignment(
-            NoteStack stack)
+            NoteStack stack,
+            MainWindow? anchorWin = null)
         {
             NoteStore store =
                 ((App)Application.Current).Store;
@@ -2615,21 +3582,19 @@ private void CompleteButton_MouseLeave(
             MainWindow[] openNotes =
                 Application.Current.Windows.OfType<MainWindow>().ToArray();
 
-            Guid refId = stack.CurrentNoteId ?? stack.NoteIds.LastOrDefault();
-            MainWindow? refWin = openNotes.FirstOrDefault(w => w.NoteId == refId) ?? this;
+            MainWindow refWin = anchorWin
+                ?? openNotes.FirstOrDefault(w => w.NoteId == (stack.CurrentNoteId ?? stack.NoteIds.LastOrDefault()))
+                ?? this;
 
-            Point refPoint;
-            if (stack.Alignment == "TopCenter")
+            double refW = refWin.Note.Width > 0 ? refWin.Note.Width : refWin.Data.Width;
+            double refLeft = refWin.Left;
+            double refTop = refWin.Top;
+
+            string alignment = stack.Alignment;
+            if (string.IsNullOrEmpty(alignment) || alignment == "TopLeft")
             {
-                refPoint = refWin.Note.PointToScreen(new Point(refWin.Note.ActualWidth / 2.0, 0));
-            }
-            else if (stack.Alignment == "TopRight")
-            {
-                refPoint = refWin.Note.PointToScreen(new Point(refWin.Note.ActualWidth, 0));
-            }
-            else // "TopLeft" (լռելյայն)
-            {
-                refPoint = refWin.Note.PointToScreen(new Point(0, 0));
+                alignment = (store.StackAlignment == "TopLeft" || string.IsNullOrEmpty(store.StackAlignment)) ? "TopCenter" : store.StackAlignment;
+                stack.Alignment = alignment;
             }
 
             foreach (Guid id in stack.NoteIds)
@@ -2637,7 +3602,7 @@ private void CompleteButton_MouseLeave(
                 MainWindow? win =
                     openNotes.FirstOrDefault(w => w.NoteId == id);
 
-                if (win != null)
+                if (win != null && win != refWin)
                 {
                     if (stack.IsZeroRotation)
                     {
@@ -2646,53 +3611,75 @@ private void CompleteButton_MouseLeave(
                         win.UpdateWindowSizeForRotation(false);
                     }
 
-                    Point curPoint;
-                    if (stack.Alignment == "TopCenter")
+                    double winW = win.Note.Width > 0 ? win.Note.Width : win.Data.Width;
+                    if (alignment == "TopLeft")
                     {
-                        curPoint = win.Note.PointToScreen(new Point(win.Note.ActualWidth / 2.0, 0));
+                        win.Left = refLeft;
+                        win.Top = refTop;
                     }
-                    else if (stack.Alignment == "TopRight")
+                    else if (alignment == "TopRight")
                     {
-                        curPoint = win.Note.PointToScreen(new Point(win.Note.ActualWidth, 0));
+                        win.Left = refLeft + (refW - winW);
+                        win.Top = refTop;
                     }
-                    else
+                    else // "TopCenter" (լռելյայն)
                     {
-                        curPoint = win.Note.PointToScreen(new Point(0, 0));
+                        // Վերին եզրի միջնակետի համընկնում բոլոր թերթիկների համար՝
+                        // refWin.Left + refW / 2 == win.Left + winW / 2 => win.Left = refLeft + (refW - winW) / 2
+                        win.Left = refLeft + (refW - winW) / 2.0;
+                        win.Top = refTop;
                     }
 
-                    double shiftX = refPoint.X - curPoint.X;
-                    double shiftY = refPoint.Y - curPoint.Y;
-
-                    win.Left += shiftX;
-                    win.Top += shiftY;
                     win.Data.Left = win.Left;
                     win.Data.Top = win.Top;
                 }
             }
+
+            refWin.Data.Left = refWin.Left;
+            refWin.Data.Top = refWin.Top;
         }
 
         public Rect GetScreenBounds()
         {
-            if (Note.ActualWidth > 0 && Note.ActualHeight > 0)
+            double w = Note.ActualWidth > 0 ? Note.ActualWidth : Note.Width;
+            double h = Note.ActualHeight > 0 ? Note.ActualHeight : Note.Height;
+            if (w <= 0) w = 150;
+            if (h <= 0) h = 220;
+
+            double angleRad = NoteRotation.Angle * Math.PI / 180.0;
+            double cos = Math.Cos(angleRad);
+            double sin = Math.Sin(angleRad);
+
+            // Pivot point is top center in Note: (w / 2.0, 0)
+            // In window space: (300 + w / 2.0, 300)
+            double cx = Left + 300 + w / 2.0;
+            double cy = Top + 300;
+
+            Point[] localCorners = new Point[]
             {
-                Point p0 = Note.PointToScreen(new Point(0, 0));
-                Point p1 = Note.PointToScreen(new Point(Note.ActualWidth, 0));
-                Point p2 = Note.PointToScreen(new Point(Note.ActualWidth, Note.ActualHeight));
-                Point p3 = Note.PointToScreen(new Point(0, Note.ActualHeight));
+                new Point(-w / 2.0, 0),
+                new Point(w / 2.0, 0),
+                new Point(w / 2.0, h),
+                new Point(-w / 2.0, h)
+            };
 
-                double minX = Math.Min(Math.Min(p0.X, p1.X), Math.Min(p2.X, p3.X));
-                double maxX = Math.Max(Math.Max(p0.X, p1.X), Math.Max(p2.X, p3.X));
-                double minY = Math.Min(Math.Min(p0.Y, p1.Y), Math.Min(p2.Y, p3.Y));
-                double maxY = Math.Max(Math.Max(p0.Y, p1.Y), Math.Max(p2.Y, p3.Y));
+            double minX = double.MaxValue;
+            double maxX = double.MinValue;
+            double minY = double.MaxValue;
+            double maxY = double.MinValue;
 
-                return new Rect(minX, minY, Math.Max(10, maxX - minX), Math.Max(10, maxY - minY));
+            foreach (var p in localCorners)
+            {
+                double rx = cx + p.X * cos - p.Y * sin;
+                double ry = cy + p.X * sin + p.Y * cos;
+
+                if (rx < minX) minX = rx;
+                if (rx > maxX) maxX = rx;
+                if (ry < minY) minY = ry;
+                if (ry > maxY) maxY = ry;
             }
 
-            return new Rect(
-                Left,
-                Top,
-                Math.Max(ActualWidth, Note.ActualWidth),
-                Math.Max(ActualHeight, Note.ActualHeight));
+            return new Rect(minX, minY, Math.Max(10, maxX - minX), Math.Max(10, maxY - minY));
         }
 
         private void CheckDragDropMerge()
@@ -2754,5 +3741,379 @@ private void CompleteButton_MouseLeave(
             CreateOrMergeStack(toMerge, targetWin);
         }
 
+    }
+
+    // =========================================================
+    // UNDO MANAGER (ՀԵՏԱՐԿՄԱՆ ՀԱՄԱԿԱՐԳ)
+    // =========================================================
+
+    public interface IAppUndoAction
+    {
+        string Description { get; }
+        void Undo();
+    }
+
+    public class RotationResetUndoAction : IAppUndoAction
+    {
+        public string Description => "Հետարկել ուղղահայաց դիրքը";
+        public Dictionary<Guid, double> PreviousAngles { get; set; } = new Dictionary<Guid, double>();
+
+        public void Undo()
+        {
+            NoteStore store = ((App)Application.Current).Store;
+            foreach (var kvp in PreviousAngles)
+            {
+                if (store.Notes.TryGetValue(kvp.Key, out NoteData? noteData))
+                {
+                    noteData.Rotation = kvp.Value;
+                }
+
+                MainWindow? win = Application.Current.Windows.OfType<MainWindow>()
+                    .FirstOrDefault(w => w.NoteId == kvp.Key);
+
+                if (win != null)
+                {
+                    win.Data.Rotation = kvp.Value;
+                    win.NoteRotation.Angle = kvp.Value;
+                    win.UpdateWindowSizeForRotation(false);
+                    win.SaveCurrentState();
+                }
+            }
+            DnoteStorage.Save(store);
+        }
+    }
+
+    public class DeleteNoteUndoAction : IAppUndoAction
+    {
+        public string Description => "Հետարկել ջնջումը";
+        public Guid NoteId { get; set; }
+
+        public void Undo()
+        {
+            NoteStore store = ((App)Application.Current).Store;
+            if (!store.DeletedNotes.TryGetValue(NoteId, out NoteData? restoredData))
+            {
+                if (store.DeletedNotes.Count > 0)
+                {
+                    NoteId = new List<Guid>(store.DeletedNotes.Keys)[store.DeletedNotes.Count - 1];
+                    restoredData = store.DeletedNotes[NoteId];
+                }
+                else return;
+            }
+
+            store.DeletedNotes.Remove(NoteId);
+            store.Notes[NoteId] = restoredData;
+
+            MainWindow restoredNote = new MainWindow(restoredData);
+            restoredNote.ShowInTaskbar = false;
+            restoredNote.Show();
+            restoredNote.Activate();
+            restoredNote.SaveCurrentState();
+            DnoteStorage.Save(store);
+        }
+    }
+
+    public class StrokeAddUndoAction : IAppUndoAction
+    {
+        public string Description => "Հետարկել մատիտի գիծը";
+        private readonly Guid noteId;
+        private readonly Stroke stroke;
+
+        public StrokeAddUndoAction(Guid noteId, Stroke stroke)
+        {
+            this.noteId = noteId;
+            this.stroke = stroke;
+        }
+
+        public void Undo()
+        {
+            MainWindow? win = Application.Current.Windows.OfType<MainWindow>().FirstOrDefault(w => w.NoteId == noteId);
+            if (win != null && win.NoteInkCanvas.Strokes.Contains(stroke))
+            {
+                win.NoteInkCanvas.Strokes.Remove(stroke);
+                win.SaveInkToData();
+                win.SaveCurrentState();
+            }
+        }
+    }
+
+    public class StrokeEraseUndoAction : IAppUndoAction
+    {
+        public string Description => "Հետարկել մատիտի ջնջումը";
+        private readonly Guid noteId;
+        private readonly Stroke stroke;
+
+        public StrokeEraseUndoAction(Guid noteId, Stroke stroke)
+        {
+            this.noteId = noteId;
+            this.stroke = stroke;
+        }
+
+        public void Undo()
+        {
+            MainWindow? win = Application.Current.Windows.OfType<MainWindow>().FirstOrDefault(w => w.NoteId == noteId);
+            if (win != null && !win.NoteInkCanvas.Strokes.Contains(stroke))
+            {
+                win.NoteInkCanvas.Strokes.Add(stroke);
+                win.SaveInkToData();
+                win.SaveCurrentState();
+            }
+        }
+    }
+
+    public static class AppUndoManager
+    {
+        private static readonly Stack<IAppUndoAction> undoStack = new Stack<IAppUndoAction>();
+
+        public static bool CanUndo =>
+            undoStack.Count > 0 || ((App)Application.Current).Store.DeletedNotes.Count > 0;
+
+        public static string CurrentUndoDescription
+        {
+            get
+            {
+                if (undoStack.Count > 0)
+                    return undoStack.Peek().Description;
+                if (((App)Application.Current).Store.DeletedNotes.Count > 0)
+                    return "Հետարկել ջնջումը";
+                return "Հետարկել";
+            }
+        }
+
+        public static void PushAction(IAppUndoAction action)
+        {
+            undoStack.Push(action);
+        }
+
+        public static void PerformUndo()
+        {
+            if (undoStack.Count > 0)
+            {
+                IAppUndoAction action = undoStack.Pop();
+                action.Undo();
+            }
+            else
+            {
+                NoteStore store = ((App)Application.Current).Store;
+                if (store.DeletedNotes.Count > 0)
+                {
+                    Guid id = new List<Guid>(store.DeletedNotes.Keys)[store.DeletedNotes.Count - 1];
+                    new DeleteNoteUndoAction { NoteId = id }.Undo();
+                }
+            }
+        }
+    }
+
+    // =========================================================
+    // PIN IMAGE GENERATOR (ԳԱՄԻ ՊԱՏԿԵՐԻ ԳՈՒՆԱՎՈՐՈՒՄ)
+    // =========================================================
+
+    public static class PinImageGenerator
+    {
+        private static BitmapSource? originalPinSource;
+        private static readonly Dictionary<string, BitmapSource> cachedTintedPins =
+            new Dictionary<string, BitmapSource>();
+
+        public static BitmapSource GetPinImageForColor(string noteColorHex)
+        {
+            if (string.IsNullOrEmpty(noteColorHex)) noteColorHex = "#FFF9A6";
+            noteColorHex = noteColorHex.ToUpperInvariant();
+
+            if (cachedTintedPins.TryGetValue(noteColorHex, out BitmapSource? cached))
+            {
+                return cached;
+            }
+
+            if (originalPinSource == null)
+            {
+                originalPinSource = LoadOriginalPin();
+            }
+
+            if (originalPinSource == null)
+            {
+                return new WriteableBitmap(1, 1, 96, 96, PixelFormats.Bgra32, null);
+            }
+
+            Color targetColor;
+            try
+            {
+                targetColor = (Color)ColorConverter.ConvertFromString(noteColorHex);
+            }
+            catch
+            {
+                targetColor = (Color)ColorConverter.ConvertFromString("#FFF9A6");
+            }
+
+            BitmapSource tinted = CreateTintedPin(originalPinSource, targetColor);
+            tinted.Freeze();
+            cachedTintedPins[noteColorHex] = tinted;
+            return tinted;
+        }
+
+        private static BitmapSource? LoadOriginalPin()
+        {
+            try
+            {
+                Uri uri = new Uri("pack://application:,,,/Assets/Pin.png", UriKind.Absolute);
+                BitmapImage bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.UriSource = uri;
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.EndInit();
+                bmp.Freeze();
+                return bmp;
+            }
+            catch
+            {
+                try
+                {
+                    string path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Pin.png");
+                    if (!System.IO.File.Exists(path))
+                    {
+                        path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Pin.png");
+                    }
+                    if (System.IO.File.Exists(path))
+                    {
+                        BitmapImage bmp = new BitmapImage();
+                        bmp.BeginInit();
+                        bmp.UriSource = new Uri(path, UriKind.Absolute);
+                        bmp.CacheOption = BitmapCacheOption.OnLoad;
+                        bmp.EndInit();
+                        bmp.Freeze();
+                        return bmp;
+                    }
+                }
+                catch { }
+            }
+            return null;
+        }
+
+        private static BitmapSource CreateTintedPin(BitmapSource src, Color targetColor)
+        {
+            FormatConvertedBitmap converted = new FormatConvertedBitmap(src, PixelFormats.Bgra32, null, 0);
+            int width = converted.PixelWidth;
+            int height = converted.PixelHeight;
+            int stride = width * 4;
+            byte[] pixels = new byte[height * stride];
+            converted.CopyPixels(pixels, stride, 0);
+
+            ColorToHsl(targetColor, out double targetH, out double targetS, out double targetL);
+
+            // Enhance saturation for pastels so the plastic pin looks rich and solid
+            if (targetS < 0.15 && targetL > 0.8) // Near white / gray
+            {
+                targetS = 0.04;
+            }
+            else
+            {
+                targetS = Math.Min(1.0, Math.Max(0.70, targetS * 1.5));
+            }
+
+            for (int i = 0; i < pixels.Length; i += 4)
+            {
+                byte b = pixels[i];
+                byte g = pixels[i + 1];
+                byte r = pixels[i + 2];
+                byte a = pixels[i + 3];
+
+                if (a == 0) continue;
+
+                int max = Math.Max(r, Math.Max(g, b));
+                int min = Math.Min(r, Math.Min(g, b));
+                double chroma = (max - min) / 255.0;
+
+                // Soft black/gray drop shadow — preserve untouched
+                if (chroma < 0.08 && max < 120)
+                {
+                    continue;
+                }
+
+                ColorToHsl(Color.FromArgb(a, r, g, b), out double origH, out double origS, out double origL);
+
+                double finalH = targetH;
+                double finalS = targetS;
+                double finalL = origL;
+
+                // Bright specular highlight fades saturation to crisp white
+                if (origL > 0.82)
+                {
+                    finalS = targetS * Math.Max(0, (1.0 - (origL - 0.82) / 0.18));
+                }
+
+                HslToRgb(finalH, finalS, finalL, out byte outR, out byte outG, out byte outB);
+
+                pixels[i] = outB;
+                pixels[i + 1] = outG;
+                pixels[i + 2] = outR;
+            }
+
+            WriteableBitmap result = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+            result.WritePixels(new Int32Rect(0, 0, width, height), pixels, stride, 0);
+            return result;
+        }
+
+        private static void ColorToHsl(Color color, out double h, out double s, out double l)
+        {
+            double r = color.R / 255.0;
+            double g = color.G / 255.0;
+            double b = color.B / 255.0;
+
+            double max = Math.Max(r, Math.Max(g, b));
+            double min = Math.Min(r, Math.Min(g, b));
+            double delta = max - min;
+
+            l = (max + min) / 2.0;
+
+            if (delta == 0)
+            {
+                h = 0;
+                s = 0;
+            }
+            else
+            {
+                s = (l <= 0.5) ? (delta / (max + min)) : (delta / (2.0 - max - min));
+
+                if (r == max)
+                    h = ((g - b) / delta) + (g < b ? 6 : 0);
+                else if (g == max)
+                    h = ((b - r) / delta) + 2;
+                else
+                    h = ((r - g) / delta) + 4;
+
+                h /= 6.0;
+            }
+        }
+
+        private static void HslToRgb(double h, double s, double l, out byte r, out byte g, out byte b)
+        {
+            double rVal, gVal, bVal;
+
+            if (s == 0)
+            {
+                rVal = gVal = bVal = l;
+            }
+            else
+            {
+                double q = l < 0.5 ? l * (1.0 + s) : l + s - l * s;
+                double p = 2.0 * l - q;
+                rVal = HueToRgb(p, q, h + 1.0 / 3.0);
+                gVal = HueToRgb(p, q, h);
+                bVal = HueToRgb(p, q, h - 1.0 / 3.0);
+            }
+
+            r = (byte)Math.Clamp((int)Math.Round(rVal * 255.0), 0, 255);
+            g = (byte)Math.Clamp((int)Math.Round(gVal * 255.0), 0, 255);
+            b = (byte)Math.Clamp((int)Math.Round(bVal * 255.0), 0, 255);
+        }
+
+        private static double HueToRgb(double p, double q, double t)
+        {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1.0 / 6.0) return p + (q - p) * 6.0 * t;
+            if (t < 1.0 / 2.0) return q;
+            if (t < 2.0 / 3.0) return p + (q - p) * (2.0 / 3.0 - t) * 6.0;
+            return p;
+        }
     }
 }
