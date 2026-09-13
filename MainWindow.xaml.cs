@@ -369,6 +369,9 @@ private void InitializeNoteVisuals()
     NoteText.Document.Blocks.Clear();
     NoteText.Document.Blocks.Add(
         new Paragraph());
+
+    LoadInkFromData();
+    UpdatePencilDrawingAttributes();
 }
 
 public MainWindow(
@@ -550,11 +553,11 @@ private void Size300x220_Click(
     SetCurrentNoteSize(300, 220);
 }
 
-private void Size150x450_Click(
+private void Size220x220_Click(
     object sender,
     RoutedEventArgs e)
 {
-    SetCurrentNoteSize(150, 450);
+    SetCurrentNoteSize(220, 220);
 }
 
         // =========================================================
@@ -1181,6 +1184,24 @@ private void DeleteButton_Click(
     }
 }
 
+        private void HelpMenu_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            HelpWindow help = new HelpWindow();
+            help.Owner = this;
+            help.ShowDialog();
+        }
+
+        private void AboutMenu_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            AboutWindow about = new AboutWindow();
+            about.Owner = this;
+            about.ShowDialog();
+        }
+
         private void UndoDelete_Click(
             object sender,
             RoutedEventArgs e)
@@ -1188,6 +1209,16 @@ private void DeleteButton_Click(
             if (AppUndoManager.CanUndo)
             {
                 AppUndoManager.PerformUndo();
+            }
+        }
+
+        private void Redo_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            if (AppUndoManager.CanRedo)
+            {
+                AppUndoManager.PerformRedo();
             }
         }
 
@@ -1238,17 +1269,21 @@ private void DeleteButton_Click(
             UndoDeleteMenuItem.Header =
                 AppUndoManager.CurrentUndoDescription;
 
+            RedoMenuItem.IsEnabled =
+                AppUndoManager.CanRedo;
+
+            RedoMenuItem.Header =
+                AppUndoManager.CurrentRedoDescription;
+
             PinMenuItem.Header =
-                Data.IsPinned ? "Ապագամել" : "Գամել (Ամենավերևում)";
+                Data.IsPinned ? "Ապագամել" : "Գամել ամենավերեւում";
 
             RotationOriginTopCenterMenuItem.IsChecked = (store.RotationOrigin != "TopLeft");
             RotationOriginTopLeftMenuItem.IsChecked = (store.RotationOrigin == "TopLeft");
 
             PencilMenuItem.IsChecked = isPencilActive;
-            ClearInkMenuItem.IsEnabled = (NoteInkCanvas.Strokes.Count > 0);
 
             bool inStack = Data.StackId != null && store.Stacks.ContainsKey(Data.StackId.Value);
-            ConvertToStackMenuItem.Visibility = inStack ? Visibility.Collapsed : Visibility.Visible;
             DetachFromStackMenuItem.Visibility = inStack ? Visibility.Visible : Visibility.Collapsed;
         }
 
@@ -1608,6 +1643,9 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
         // =========================================================
 
         private bool isResizing = false;
+        private Point resizeStartMouseScreen;
+        private double resizeStartWidth;
+        private double resizeStartHeight;
 
         private void ResizeGrip_MouseLeftButtonDown(
             object sender,
@@ -1617,6 +1655,9 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
                 return;
 
             isResizing = true;
+            resizeStartMouseScreen = PointToScreen(e.GetPosition(this));
+            resizeStartWidth = Note.Width > 0 ? Note.Width : Data.Width;
+            resizeStartHeight = Note.Height > 0 ? Note.Height : Data.Height;
             ResizeGrip.CaptureMouse();
             e.Handled = true;
         }
@@ -1628,24 +1669,28 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
             if (!isResizing)
                 return;
 
-            NoteStore store = ((App)Application.Current).Store;
-            Point currentPos = e.GetPosition(Note);
-            double newWidth = Math.Max(140, currentPos.X);
-            double newHeight = Math.Max(80, currentPos.Y);
+            Point currentMouseScreen = PointToScreen(e.GetPosition(this));
+            double deltaX = currentMouseScreen.X - resizeStartMouseScreen.X;
+            double deltaY = currentMouseScreen.Y - resizeStartMouseScreen.Y;
 
-            double oldWidth = Note.Width;
-            double deltaWidth = newWidth - oldWidth;
+            if (Math.Abs(NoteRotation.Angle) > 0.001)
+            {
+                double angleRad = -NoteRotation.Angle * Math.PI / 180.0;
+                double cos = Math.Cos(angleRad);
+                double sin = Math.Sin(angleRad);
+                double localDeltaX = deltaX * cos - deltaY * sin;
+                double localDeltaY = deltaX * sin + deltaY * cos;
+                deltaX = localDeltaX;
+                deltaY = localDeltaY;
+            }
+
+            double newWidth = Math.Max(140, resizeStartWidth + deltaX);
+            double newHeight = Math.Max(80, resizeStartHeight + deltaY);
 
             Note.Width = newWidth;
             Note.Height = newHeight;
             Data.Width = newWidth;
             Data.Height = newHeight;
-
-            if (store.RotationOrigin != "TopLeft" && Math.Abs(deltaWidth) > 0.001)
-            {
-                Left -= deltaWidth / 2.0;
-                Data.Left = Left;
-            }
 
             Width = Math.Max(Width, newWidth + 600);
             Height = Math.Max(Height, newHeight + 600);
@@ -2306,12 +2351,60 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
         private void FontCourier_Click(object sender, RoutedEventArgs e) => SetCurrentNoteFont("Courier New");
         private void FontArial_Click(object sender, RoutedEventArgs e) => SetCurrentNoteFont("Arial");
         private void FontTimes_Click(object sender, RoutedEventArgs e) => SetCurrentNoteFont("Times New Roman");
+        private void ApplyFontSelection(string fontName, double fontSize, bool isBold, bool isItalic)
+        {
+            if (!NoteText.Selection.IsEmpty)
+            {
+                NoteText.Selection.ApplyPropertyValue(TextElement.FontFamilyProperty, new FontFamily(fontName));
+                NoteText.Selection.ApplyPropertyValue(TextElement.FontSizeProperty, fontSize);
+                NoteText.Selection.ApplyPropertyValue(TextElement.FontWeightProperty, isBold ? FontWeights.Bold : FontWeights.Normal);
+                NoteText.Selection.ApplyPropertyValue(TextElement.FontStyleProperty, isItalic ? FontStyles.Italic : FontStyles.Normal);
+            }
+            else
+            {
+                Data.FontFamily = fontName;
+                Data.FontSize = fontSize;
+                Data.IsBold = isBold;
+                Data.IsItalic = isItalic;
+
+                NoteText.FontFamily = new FontFamily(fontName);
+                NoteText.FontSize = fontSize;
+                NoteText.FontWeight = isBold ? FontWeights.Bold : FontWeights.Normal;
+                NoteText.FontStyle = isItalic ? FontStyles.Italic : FontStyles.Normal;
+            }
+
+            UpdateDataFromWindow();
+            DnoteStorage.Save(((App)Application.Current).Store);
+            NoteText.Focus();
+        }
+
         private void FontCustom_Click(object sender, RoutedEventArgs e)
         {
-            Forms.FontDialog dialog = new Forms.FontDialog();
-            if (dialog.ShowDialog() == Forms.DialogResult.OK)
+            string currentFont = Data.FontFamily ?? "Comic Sans MS";
+            double currentSize = Data.FontSize > 0 ? Data.FontSize : 14;
+            bool currentBold = Data.IsBold;
+            bool currentItalic = Data.IsItalic;
+
+            if (!NoteText.Selection.IsEmpty)
             {
-                SetCurrentNoteFont(dialog.Font.FontFamily.Name);
+                object fontVal = NoteText.Selection.GetPropertyValue(TextElement.FontFamilyProperty);
+                if (fontVal is FontFamily ff) currentFont = ff.Source;
+
+                object sizeVal = NoteText.Selection.GetPropertyValue(TextElement.FontSizeProperty);
+                if (sizeVal is double sz) currentSize = sz;
+
+                object weightVal = NoteText.Selection.GetPropertyValue(TextElement.FontWeightProperty);
+                if (weightVal is FontWeight fw) currentBold = (fw == FontWeights.Bold || fw == FontWeights.ExtraBold || fw == FontWeights.SemiBold);
+
+                object styleVal = NoteText.Selection.GetPropertyValue(TextElement.FontStyleProperty);
+                if (styleVal is FontStyle fs) currentItalic = (fs == FontStyles.Italic);
+            }
+
+            FontSelectionWindow dialog = new FontSelectionWindow(currentFont, currentSize, currentBold, currentItalic);
+            dialog.Owner = this;
+            if (dialog.ShowDialog() == true)
+            {
+                ApplyFontSelection(dialog.SelectedFontFamily, dialog.SelectedFontSize, dialog.SelectedIsBold, dialog.SelectedIsItalic);
             }
         }
 
@@ -2328,12 +2421,16 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
             DnoteStorage.Save(((App)Application.Current).Store);
         }
 
-        private void NoteColorYellow_Click(object sender, RoutedEventArgs e) => SetCurrentNoteColor("#FFF59D");
-        private void NoteColorGreen_Click(object sender, RoutedEventArgs e) => SetCurrentNoteColor("#C8E6C9");
-        private void NoteColorBlue_Click(object sender, RoutedEventArgs e) => SetCurrentNoteColor("#BBDEFB");
-        private void NoteColorPink_Click(object sender, RoutedEventArgs e) => SetCurrentNoteColor("#F8BBD0");
-        private void NoteColorPurple_Click(object sender, RoutedEventArgs e) => SetCurrentNoteColor("#E1BEE7");
-        private void NoteColorWhite_Click(object sender, RoutedEventArgs e) => SetCurrentNoteColor("#FFFFFF");
+        private void NoteColorSwatch_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is FrameworkElement el && el.Tag is string hex)
+            {
+                SetCurrentNoteColor(hex);
+                NoteContextMenu.IsOpen = false;
+                e.Handled = true;
+            }
+        }
+
         private void NoteColorCustom_Click(object sender, RoutedEventArgs e)
         {
             Forms.ColorDialog dialog = new Forms.ColorDialog { FullOpen = true };
@@ -2341,7 +2438,15 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
             {
                 string hex = string.Format("#{0:X2}{1:X2}{2:X2}", dialog.Color.R, dialog.Color.G, dialog.Color.B);
                 SetCurrentNoteColor(hex);
+                NoteContextMenu.IsOpen = false;
             }
+        }
+
+        private void NoteColorCustom_Click(object sender, MouseButtonEventArgs e)
+        {
+            NoteContextMenu.IsOpen = false;
+            NoteColorCustom_Click(sender, (RoutedEventArgs)e);
+            e.Handled = true;
         }
 
 
@@ -2822,7 +2927,7 @@ private void CompleteButton_MouseLeave(
             Data.IsPinned = false;
             Topmost = false;
             UpdatePinVisual();
-            PinMenuItem.Header = "Գամել (Ամենավերևում)";
+            PinMenuItem.Header = "Գամել ամենավերեւում";
             SaveCurrentState();
         }
 
@@ -3131,7 +3236,7 @@ private void CompleteButton_MouseLeave(
 
             if (isCtrl)
             {
-                if (e.Key == Key.Z)
+                if (e.Key == Key.Z && (Keyboard.Modifiers & ModifierKeys.Shift) != ModifierKeys.Shift)
                 {
                     if (isPencilActive)
                     {
@@ -3152,6 +3257,32 @@ private void CompleteButton_MouseLeave(
                         if (AppUndoManager.CanUndo)
                         {
                             AppUndoManager.PerformUndo();
+                            e.Handled = true;
+                            return;
+                        }
+                    }
+                }
+                else if (e.Key == Key.Y || (e.Key == Key.Z && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift))
+                {
+                    if (isPencilActive)
+                    {
+                        if (AppUndoManager.CanRedo)
+                        {
+                            AppUndoManager.PerformRedo();
+                            e.Handled = true;
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        if (NoteText.IsFocused && NoteText.CanRedo)
+                        {
+                            return; // RichTextBox handles typing redo
+                        }
+
+                        if (AppUndoManager.CanRedo)
+                        {
+                            AppUndoManager.PerformRedo();
                             e.Handled = true;
                             return;
                         }
@@ -3750,12 +3881,15 @@ private void CompleteButton_MouseLeave(
     public interface IAppUndoAction
     {
         string Description { get; }
+        string RedoDescription { get; }
         void Undo();
+        void Redo();
     }
 
     public class RotationResetUndoAction : IAppUndoAction
     {
         public string Description => "Հետարկել ուղղահայաց դիրքը";
+        public string RedoDescription => "Վերարկել ուղղահայաց դիրքը";
         public Dictionary<Guid, double> PreviousAngles { get; set; } = new Dictionary<Guid, double>();
 
         public void Undo()
@@ -3781,11 +3915,36 @@ private void CompleteButton_MouseLeave(
             }
             DnoteStorage.Save(store);
         }
+
+        public void Redo()
+        {
+            NoteStore store = ((App)Application.Current).Store;
+            foreach (var kvp in PreviousAngles)
+            {
+                if (store.Notes.TryGetValue(kvp.Key, out NoteData? noteData))
+                {
+                    noteData.Rotation = 0;
+                }
+
+                MainWindow? win = Application.Current.Windows.OfType<MainWindow>()
+                    .FirstOrDefault(w => w.NoteId == kvp.Key);
+
+                if (win != null)
+                {
+                    win.Data.Rotation = 0;
+                    win.NoteRotation.Angle = 0;
+                    win.UpdateWindowSizeForRotation(false);
+                    win.SaveCurrentState();
+                }
+            }
+            DnoteStorage.Save(store);
+        }
     }
 
     public class DeleteNoteUndoAction : IAppUndoAction
     {
         public string Description => "Հետարկել ջնջումը";
+        public string RedoDescription => "Վերարկել ջնջումը";
         public Guid NoteId { get; set; }
 
         public void Undo()
@@ -3811,11 +3970,30 @@ private void CompleteButton_MouseLeave(
             restoredNote.SaveCurrentState();
             DnoteStorage.Save(store);
         }
+
+        public void Redo()
+        {
+            NoteStore store = ((App)Application.Current).Store;
+            MainWindow? win = Application.Current.Windows.OfType<MainWindow>()
+                .FirstOrDefault(w => w.NoteId == NoteId);
+
+            if (win != null)
+            {
+                win.Close();
+            }
+            else if (store.Notes.TryGetValue(NoteId, out NoteData? data))
+            {
+                store.Notes.Remove(NoteId);
+                store.DeletedNotes[NoteId] = data;
+                DnoteStorage.Save(store);
+            }
+        }
     }
 
     public class StrokeAddUndoAction : IAppUndoAction
     {
         public string Description => "Հետարկել մատիտի գիծը";
+        public string RedoDescription => "Վերարկել մատիտի գիծը";
         private readonly Guid noteId;
         private readonly Stroke stroke;
 
@@ -3835,11 +4013,23 @@ private void CompleteButton_MouseLeave(
                 win.SaveCurrentState();
             }
         }
+
+        public void Redo()
+        {
+            MainWindow? win = Application.Current.Windows.OfType<MainWindow>().FirstOrDefault(w => w.NoteId == noteId);
+            if (win != null && !win.NoteInkCanvas.Strokes.Contains(stroke))
+            {
+                win.NoteInkCanvas.Strokes.Add(stroke);
+                win.SaveInkToData();
+                win.SaveCurrentState();
+            }
+        }
     }
 
     public class StrokeEraseUndoAction : IAppUndoAction
     {
         public string Description => "Հետարկել մատիտի ջնջումը";
+        public string RedoDescription => "Վերարկել մատիտի ջնջումը";
         private readonly Guid noteId;
         private readonly Stroke stroke;
 
@@ -3859,38 +4049,187 @@ private void CompleteButton_MouseLeave(
                 win.SaveCurrentState();
             }
         }
+
+        public void Redo()
+        {
+            MainWindow? win = Application.Current.Windows.OfType<MainWindow>().FirstOrDefault(w => w.NoteId == noteId);
+            if (win != null && win.NoteInkCanvas.Strokes.Contains(stroke))
+            {
+                win.NoteInkCanvas.Strokes.Remove(stroke);
+                win.SaveInkToData();
+                win.SaveCurrentState();
+            }
+        }
+    }
+
+    public class NotePropertiesSnapshot
+    {
+        public Guid NoteId { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+        public double Left { get; set; }
+        public double Top { get; set; }
+        public string NoteColor { get; set; } = string.Empty;
+        public string TextColor { get; set; } = string.Empty;
+        public string FontFamily { get; set; } = string.Empty;
+        public double FontSize { get; set; }
+        public bool IsBold { get; set; }
+        public bool IsItalic { get; set; }
+    }
+
+    public class ApplyPreferencesUndoAction : IAppUndoAction
+    {
+        public string Description => "Հետարկել նախընտրանքների կիրառումը";
+        public string RedoDescription => "Վերարկել նախընտրանքների կիրառումը";
+
+        public List<NotePropertiesSnapshot> PreviousSnapshots { get; set; } = new List<NotePropertiesSnapshot>();
+        public List<NotePropertiesSnapshot> NewSnapshots { get; set; } = new List<NotePropertiesSnapshot>();
+        public Dictionary<Guid, string> PreviousStackAlignments { get; set; } = new Dictionary<Guid, string>();
+        public string NewStackAlignment { get; set; } = string.Empty;
+
+        public void Undo()
+        {
+            RestoreSnapshots(PreviousSnapshots, PreviousStackAlignments);
+        }
+
+        public void Redo()
+        {
+            Dictionary<Guid, string> newAlignments = new Dictionary<Guid, string>();
+            NoteStore store = ((App)Application.Current).Store;
+            foreach (var stackId in store.Stacks.Keys)
+            {
+                newAlignments[stackId] = NewStackAlignment;
+            }
+            RestoreSnapshots(NewSnapshots, newAlignments);
+        }
+
+        private void RestoreSnapshots(List<NotePropertiesSnapshot> snapshots, Dictionary<Guid, string> stackAlignments)
+        {
+            NoteStore store = ((App)Application.Current).Store;
+            MainWindow[] openNotes = Application.Current.Windows.OfType<MainWindow>().ToArray();
+
+            foreach (var snap in snapshots)
+            {
+                if (store.Notes.TryGetValue(snap.NoteId, out NoteData? data))
+                {
+                    data.Width = snap.Width;
+                    data.Height = snap.Height;
+                    data.Left = snap.Left;
+                    data.Top = snap.Top;
+                    data.NoteColor = snap.NoteColor;
+                    data.TextColor = snap.TextColor;
+                    data.FontFamily = snap.FontFamily;
+                    data.FontSize = snap.FontSize;
+                    data.IsBold = snap.IsBold;
+                    data.IsItalic = snap.IsItalic;
+                }
+
+                MainWindow? win = openNotes.FirstOrDefault(w => w.NoteId == snap.NoteId);
+                if (win != null)
+                {
+                    win.Note.Width = snap.Width;
+                    win.Note.Height = snap.Height;
+                    win.Left = snap.Left;
+                    win.Top = snap.Top;
+
+                    if (!string.IsNullOrEmpty(snap.NoteColor))
+                    {
+                        win.Note.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(snap.NoteColor));
+                    }
+                    if (!string.IsNullOrEmpty(snap.FontFamily))
+                    {
+                        win.NoteText.FontFamily = new FontFamily(snap.FontFamily);
+                    }
+                    if (snap.FontSize > 0)
+                    {
+                        win.NoteText.FontSize = snap.FontSize;
+                    }
+                    win.NoteText.FontWeight = snap.IsBold ? FontWeights.Bold : FontWeights.Normal;
+                    win.NoteText.FontStyle = snap.IsItalic ? FontStyles.Italic : FontStyles.Normal;
+                    if (!string.IsNullOrEmpty(snap.TextColor))
+                    {
+                        win.NoteText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(snap.TextColor));
+                    }
+
+                    win.UpdateWindowSizeForRotation(false);
+                    win.SaveCurrentState();
+                }
+            }
+
+            foreach (var kvp in stackAlignments)
+            {
+                if (store.Stacks.TryGetValue(kvp.Key, out NoteStack? stack))
+                {
+                    stack.Alignment = kvp.Value;
+                    MainWindow? topWin = openNotes.FirstOrDefault(w => w.NoteId == (stack.CurrentNoteId ?? stack.NoteIds.LastOrDefault()));
+                    if (topWin != null)
+                    {
+                        topWin.ApplyStackAlignment(stack);
+                    }
+                }
+            }
+
+            DnoteStorage.Save(store);
+        }
     }
 
     public static class AppUndoManager
     {
-        private static readonly Stack<IAppUndoAction> undoStack = new Stack<IAppUndoAction>();
+        private static readonly List<IAppUndoAction> undoHistory = new List<IAppUndoAction>();
+        private static readonly List<IAppUndoAction> redoHistory = new List<IAppUndoAction>();
+        private const int MaxHistory = 5;
 
         public static bool CanUndo =>
-            undoStack.Count > 0 || ((App)Application.Current).Store.DeletedNotes.Count > 0;
+            undoHistory.Count > 0 || ((App)Application.Current).Store.DeletedNotes.Count > 0;
+
+        public static bool CanRedo =>
+            redoHistory.Count > 0;
 
         public static string CurrentUndoDescription
         {
             get
             {
-                if (undoStack.Count > 0)
-                    return undoStack.Peek().Description;
+                if (undoHistory.Count > 0)
+                    return undoHistory[undoHistory.Count - 1].Description;
                 if (((App)Application.Current).Store.DeletedNotes.Count > 0)
                     return "Հետարկել ջնջումը";
                 return "Հետարկել";
             }
         }
 
+        public static string CurrentRedoDescription
+        {
+            get
+            {
+                if (redoHistory.Count > 0)
+                    return redoHistory[redoHistory.Count - 1].RedoDescription;
+                return "Վերարկել";
+            }
+        }
+
         public static void PushAction(IAppUndoAction action)
         {
-            undoStack.Push(action);
+            undoHistory.Add(action);
+            if (undoHistory.Count > MaxHistory)
+            {
+                undoHistory.RemoveAt(0);
+            }
+            redoHistory.Clear();
         }
 
         public static void PerformUndo()
         {
-            if (undoStack.Count > 0)
+            if (undoHistory.Count > 0)
             {
-                IAppUndoAction action = undoStack.Pop();
+                IAppUndoAction action = undoHistory[undoHistory.Count - 1];
+                undoHistory.RemoveAt(undoHistory.Count - 1);
                 action.Undo();
+
+                redoHistory.Add(action);
+                if (redoHistory.Count > MaxHistory)
+                {
+                    redoHistory.RemoveAt(0);
+                }
             }
             else
             {
@@ -3898,7 +4237,30 @@ private void CompleteButton_MouseLeave(
                 if (store.DeletedNotes.Count > 0)
                 {
                     Guid id = new List<Guid>(store.DeletedNotes.Keys)[store.DeletedNotes.Count - 1];
-                    new DeleteNoteUndoAction { NoteId = id }.Undo();
+                    var action = new DeleteNoteUndoAction { NoteId = id };
+                    action.Undo();
+
+                    redoHistory.Add(action);
+                    if (redoHistory.Count > MaxHistory)
+                    {
+                        redoHistory.RemoveAt(0);
+                    }
+                }
+            }
+        }
+
+        public static void PerformRedo()
+        {
+            if (redoHistory.Count > 0)
+            {
+                IAppUndoAction action = redoHistory[redoHistory.Count - 1];
+                redoHistory.RemoveAt(redoHistory.Count - 1);
+                action.Redo();
+
+                undoHistory.Add(action);
+                if (undoHistory.Count > MaxHistory)
+                {
+                    undoHistory.RemoveAt(0);
                 }
             }
         }

@@ -1,0 +1,96 @@
+﻿<Window x:Class="DesktopNotes.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Ծրագրի մասին"
+        Width="460"
+        Height="360"
+        MinWidth="400"
+        MinHeight="300"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResizeWithGrip"
+        Background="#F7F7F7">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Վերնագիր և պատկերակ -->
+        <Border Grid.Row="0"
+                Background="White"
+                BorderBrush="#E0E0E0"
+                BorderThickness="1"
+                CornerRadius="6"
+                Padding="16,12"
+                Margin="0,0,0,12">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Image Source="Assets/DesktopNotes.ico"
+                       Width="44"
+                       Height="44"
+                       Margin="0,0,16,0"
+                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="DesktopNotes"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               Foreground="#222222"/>
+                    <TextBlock Text="Տարբերակ 1.0"
+                               FontSize="12"
+                               Foreground="#777777"
+                               Margin="0,2,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Նկարագրության և տեղեկությունների դաշտ -->
+        <Border Grid.Row="1"
+                Background="White"
+                BorderBrush="#E0E0E0"
+                BorderThickness="1"
+                CornerRadius="6"
+                Padding="16,12"
+                Margin="0,0,0,16">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <TextBlock Text="Հարմարավետ եւ բազմաֆունկցիոնալ գրասեղանի թերթիկներ (Sticky Notes)՝ նախատեսված արագ նշումներ կատարելու, նկարելու, տրցակներ կազմելու եւ գրառումները հեշտությամբ կազմակերպելու համար։"
+                               FontSize="13"
+                               TextWrapping="Wrap"
+                               LineHeight="19"
+                               Foreground="#333333"
+                               Margin="0,0,0,12"/>
+
+                    <Separator Margin="0,4,0,12" Background="#EEEEEE"/>
+
+                    <TextBlock Text="Հեղինակ՝ Ռուբէն Թարումեան"
+                               FontSize="12.5"
+                               FontWeight="SemiBold"
+                               Foreground="#444444"
+                               Margin="0,0,0,4"/>
+
+                    <TextBlock Text="Հեղինակային իրավունք © 2026: Բոլոր իրավունքները պաշտպանված են։"
+                               FontSize="11.5"
+                               Foreground="#888888"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Փակել կոճակ -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Content="Փակել"
+                    Width="90"
+                    Height="28"
+                    IsDefault="True"
+                    IsCancel="True"
+                    Background="#FFFFFF"
+                    BorderBrush="#C5C5C5"
+                    BorderThickness="1"
+                    Cursor="Hand"
+                    Click="CloseButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

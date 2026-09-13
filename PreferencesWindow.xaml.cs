@@ -18,7 +18,7 @@ namespace DesktopNotes
         {
             "150 × 220",
             "300 × 220",
-            "150 × 450"
+            "220 × 220"
         };
 
         // Ամրագրված գույներ (Հիմնական գույներ թերթիկի, տեքստի եւ մատիտի համար)
@@ -127,6 +127,8 @@ namespace DesktopNotes
 
             // 10. Windows Startup
             AutostartCheckBox.IsChecked = StartupManager.IsEnabled();
+
+            UpdateFontPreview();
         }
 
         // =========================================================
@@ -547,6 +549,34 @@ namespace DesktopNotes
 
         private void FontFamilyComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            UpdateFontPreview();
+        }
+
+        private void FontInput_Changed(object sender, EventArgs e)
+        {
+            UpdateFontPreview();
+        }
+
+        private void UpdateFontPreview()
+        {
+            if (FontPreviewTextBlock == null) return;
+
+            if (FontFamilyComboBox?.SelectedItem is ComboBoxItem cbi && cbi.Tag is string fontName)
+            {
+                FontPreviewTextBlock.FontFamily = new FontFamily(fontName);
+            }
+
+            if (double.TryParse(FontSizeTextBox?.Text?.Trim(), out double sz) && sz >= 6 && sz <= 120)
+            {
+                FontPreviewTextBlock.FontSize = Math.Min(22, sz);
+            }
+
+            int styleIdx = FontStyleComboBox?.SelectedIndex ?? 0;
+            bool isBold = (styleIdx == 1 || styleIdx == 3);
+            bool isItalic = (styleIdx == 2 || styleIdx == 3);
+
+            FontPreviewTextBlock.FontWeight = isBold ? FontWeights.Bold : FontWeights.Normal;
+            FontPreviewTextBlock.FontStyle = isItalic ? FontStyles.Italic : FontStyles.Normal;
         }
 
         // =========================================================
@@ -644,6 +674,37 @@ namespace DesktopNotes
         {
             MainWindow[] openNotes = Application.Current.Windows.OfType<MainWindow>().ToArray();
 
+            // 1. Ստեղծում ենք նախորդ վիճակների պատճենները հետարկման (Undo) համար
+            List<NotePropertiesSnapshot> beforeSnapshots = new List<NotePropertiesSnapshot>();
+            Dictionary<Guid, string> beforeStackAlignments = new Dictionary<Guid, string>();
+
+            foreach (MainWindow window in openNotes)
+            {
+                if (store.Notes.TryGetValue(window.NoteId, out NoteData? data))
+                {
+                    beforeSnapshots.Add(new NotePropertiesSnapshot
+                    {
+                        NoteId = window.NoteId,
+                        Width = data.Width > 0 ? data.Width : (window.Note.Width > 0 ? window.Note.Width : 150),
+                        Height = data.Height > 0 ? data.Height : (window.Note.Height > 0 ? window.Note.Height : 220),
+                        Left = window.Left,
+                        Top = window.Top,
+                        NoteColor = data.NoteColor ?? "#FFF59D",
+                        TextColor = data.TextColor ?? "#000000",
+                        FontFamily = data.FontFamily ?? "Comic Sans MS",
+                        FontSize = data.FontSize > 0 ? data.FontSize : 14,
+                        IsBold = data.IsBold,
+                        IsItalic = data.IsItalic
+                    });
+                }
+            }
+
+            foreach (var stack in store.Stacks.Values)
+            {
+                beforeStackAlignments[stack.Id] = stack.Alignment ?? "TopCenter";
+            }
+
+            // 2. Կիրառում ենք նոր նախընտրանքները
             foreach (MainWindow window in openNotes)
             {
                 // Թարմացնում ենք NoteData-ի հատկությունները
@@ -669,6 +730,9 @@ namespace DesktopNotes
                 window.NoteText.FontWeight = store.IsBold ? FontWeights.Bold : FontWeights.Normal;
                 window.NoteText.FontStyle = store.IsItalic ? FontStyles.Italic : FontStyles.Normal;
                 window.NoteText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(store.TextColor));
+
+                window.UpdateWindowSizeForRotation(false);
+                window.SaveCurrentState();
             }
 
             // Թարմացնում ենք բոլոր տրցակների հավասարեցումը
@@ -681,6 +745,35 @@ namespace DesktopNotes
                     topWin.ApplyStackAlignment(stack);
                 }
             }
+
+            // 3. Ստեղծում ենք նոր վիճակների պատճենները վերարկման (Redo) համար
+            List<NotePropertiesSnapshot> afterSnapshots = new List<NotePropertiesSnapshot>();
+            foreach (MainWindow window in openNotes)
+            {
+                afterSnapshots.Add(new NotePropertiesSnapshot
+                {
+                    NoteId = window.NoteId,
+                    Width = store.NoteWidth,
+                    Height = store.NoteHeight,
+                    Left = window.Left,
+                    Top = window.Top,
+                    NoteColor = store.NoteColor,
+                    TextColor = store.TextColor,
+                    FontFamily = store.FontFamily,
+                    FontSize = store.FontSize,
+                    IsBold = store.IsBold,
+                    IsItalic = store.IsItalic
+                });
+            }
+
+            // 4. Ավելացնում ենք գործողությունը UndoManager-ի մեջ
+            AppUndoManager.PushAction(new ApplyPreferencesUndoAction
+            {
+                PreviousSnapshots = beforeSnapshots,
+                NewSnapshots = afterSnapshots,
+                PreviousStackAlignments = beforeStackAlignments,
+                NewStackAlignment = store.StackAlignment
+            });
 
             DnoteStorage.Save(store);
         }

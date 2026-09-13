@@ -34,12 +34,6 @@
                           InputGestureText="Ctrl+F"
                           Click="SearchNotes_Click"/>
 
-                <Separator/>
-
-                <MenuItem x:Name="ConvertToStackMenuItem"
-                          Header="Վերածել տրցակի"
-                          Click="ConvertToStack_Click"/>
-
                 <MenuItem x:Name="DetachFromStackMenuItem"
                           Header="Հեռացնել տրցակից"
                           Click="DetachFromStackMenu_Click"
@@ -52,27 +46,23 @@
 
                 <MenuItem Header="Պտտման կետ">
                     <MenuItem x:Name="RotationOriginTopCenterMenuItem"
-                              Header="Վերևի մեջտեղ (գամի կետ)"
+                              Header="Վերեւի մեջտեղ (գամի կետ)"
                               Click="RotationOriginTopCenter_Click"/>
                     <MenuItem x:Name="RotationOriginTopLeftMenuItem"
-                              Header="Ձախ վերևի անկյուն"
+                              Header="Ձախ վերեւի անկյուն"
                               Click="RotationOriginTopLeft_Click"/>
                 </MenuItem>
 
                 <MenuItem x:Name="PinMenuItem"
-                          Header="Գամել (Ամենավերևում)"
+                          Header="Գամել ամենավերեւում"
                           Click="TogglePin_Click"/>
 
                 <Separator/>
 
                 <MenuItem x:Name="PencilMenuItem"
-                          Header="Մատիտ (նկարել)"
+                          Header="Մատիտ"
                           InputGestureText="Ctrl+P"
                           Click="TogglePencil_Click"/>
-
-                <MenuItem x:Name="ClearInkMenuItem"
-                          Header="Մաքրել մատիտի հետքերը"
-                          Click="ClearInk_Click"/>
 
                 <Separator/>
 
@@ -91,20 +81,31 @@
                               Click="FontCustom_Click"/>
                 </MenuItem>
                 <MenuItem Header="Թերթիկի գույն">
-                    <MenuItem Header="Դեղին"
-                              Click="NoteColorYellow_Click"/>
-                    <MenuItem Header="Կանաչ"
-                              Click="NoteColorGreen_Click"/>
-                    <MenuItem Header="Կապույտ"
-                              Click="NoteColorBlue_Click"/>
-                    <MenuItem Header="Վարդագույն"
-                              Click="NoteColorPink_Click"/>
-                    <MenuItem Header="Մանուշակագույն"
-                              Click="NoteColorPurple_Click"/>
-                    <MenuItem Header="Սպիտակ"
-                              Click="NoteColorWhite_Click"/>
-                    <MenuItem Header="Այլ..."
-                              Click="NoteColorCustom_Click"/>
+                    <MenuItem StaysOpenOnClick="False" FocusVisualStyle="{x:Null}">
+                        <MenuItem.Template>
+                            <ControlTemplate TargetType="MenuItem">
+                                <Border Background="White"
+                                        Padding="6"
+                                        CornerRadius="3"
+                                        BorderBrush="#D0D0D0"
+                                        BorderThickness="1">
+                                    <WrapPanel Width="120"
+                                               Orientation="Horizontal"
+                                               HorizontalAlignment="Center">
+                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#FFF59D" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#FFF59D" ToolTip="Դեղին"/>
+                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#C8E6C9" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#C8E6C9" ToolTip="Կանաչ"/>
+                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#BBDEFB" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#BBDEFB" ToolTip="Կապույտ"/>
+                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#F8BBD0" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#F8BBD0" ToolTip="Վարդագույն"/>
+                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#E1BEE7" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#E1BEE7" ToolTip="Մանուշակագույն"/>
+                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#FFFFFF" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#FFFFFF" ToolTip="Սպիտակ"/>
+                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#F5F5F5" BorderBrush="#999999" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorCustom_Click" ToolTip="Այլ գույն...">
+                                            <TextBlock Text="+" FontSize="14" FontWeight="Bold" Foreground="#555555" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-2,0,0"/>
+                                        </Border>
+                                    </WrapPanel>
+                                </Border>
+                            </ControlTemplate>
+                        </MenuItem.Template>
+                    </MenuItem>
                 </MenuItem>
 
                 <MenuItem Header="Չափ">
@@ -112,8 +113,8 @@
                               Click="Size150x220_Click"/>
                     <MenuItem Header="300 × 220"
                               Click="Size300x220_Click"/>
-                    <MenuItem Header="150 × 450"
-                              Click="Size150x450_Click"/>
+                    <MenuItem Header="220 × 220"
+                              Click="Size220x220_Click"/>
                 </MenuItem>
 
                 <Separator/>
@@ -121,10 +122,26 @@
                 <MenuItem Header="Արտահանել Excel"
                           Click="ExportExcel_Click"/>
 
+                <Separator/>
+
+                <MenuItem Header="Օգնություն"
+                          Click="HelpMenu_Click"/>
+
+                <MenuItem Header="Ծրագրի մասին"
+                          Click="AboutMenu_Click"/>
+
+                <Separator/>
+
                 <MenuItem x:Name="UndoDeleteMenuItem"
                           Header="Հետարկել"
                           InputGestureText="Ctrl+Z"
                           Click="UndoDelete_Click"
+                          IsEnabled="False"/>
+
+                <MenuItem x:Name="RedoMenuItem"
+                          Header="Վերարկել"
+                          InputGestureText="Ctrl+Y"
+                          Click="Redo_Click"
                           IsEnabled="False"/>
 
                 <MenuItem Header="Փակել"
@@ -205,7 +222,7 @@
             FocusVisualStyle="{x:Null}"
             Visibility="Collapsed"
             Click="PinButton_Click"
-            ToolTip="Ապագամել (հանել ամենավերևից)">
+            ToolTip="Ապագամել ամենավերեւից">
         <Button.Template>
             <ControlTemplate TargetType="Button">
                 <Image Source="{Binding Tag, RelativeSource={RelativeSource AncestorType=Button}}"

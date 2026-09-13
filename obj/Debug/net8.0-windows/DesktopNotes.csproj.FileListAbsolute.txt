@@ -64,3 +64,9 @@ D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\DesktopNotes.genruntimeconfig.
 D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\ref\DesktopNotes.dll
 D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\PreferencesWindow.baml
 D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\PreferencesWindow.g.cs
+D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\FontSelectionWindow.baml
+D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\FontSelectionWindow.g.cs
+D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\AboutWindow.baml
+D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\HelpWindow.baml
+D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\AboutWindow.g.cs
+D:\Tarumian\DesktopNotes\obj\Debug\net8.0-windows\HelpWindow.g.cs

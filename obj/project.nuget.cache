@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "IJlm/2MpohY=",
+  "dgSpecHash": "szxn6qymyYo=",
   "success": true,
   "projectFilePath": "D:\\Tarumian\\DesktopNotes\\DesktopNotes.csproj",
   "expectedPackageFiles": [
@@ -12,11 +12,15 @@
     "C:\\Users\\post\\.nuget\\packages\\h.generatedicons.system.drawing\\2.3.2\\h.generatedicons.system.drawing.2.3.2.nupkg.sha512",
     "C:\\Users\\post\\.nuget\\packages\\h.notifyicon\\2.3.2\\h.notifyicon.2.3.2.nupkg.sha512",
     "C:\\Users\\post\\.nuget\\packages\\h.notifyicon.wpf\\2.3.2\\h.notifyicon.wpf.2.3.2.nupkg.sha512",
+    "C:\\Users\\post\\.nuget\\packages\\microsoft.net.illink.tasks\\8.0.29\\microsoft.net.illink.tasks.8.0.29.nupkg.sha512",
     "C:\\Users\\post\\.nuget\\packages\\microsoft.win32.systemevents\\9.0.1\\microsoft.win32.systemevents.9.0.1.nupkg.sha512",
     "C:\\Users\\post\\.nuget\\packages\\rbush.signed\\4.0.0\\rbush.signed.4.0.0.nupkg.sha512",
     "C:\\Users\\post\\.nuget\\packages\\sixlabors.fonts\\1.0.0\\sixlabors.fonts.1.0.0.nupkg.sha512",
     "C:\\Users\\post\\.nuget\\packages\\system.drawing.common\\9.0.1\\system.drawing.common.9.0.1.nupkg.sha512",
-    "C:\\Users\\post\\.nuget\\packages\\system.io.packaging\\8.0.1\\system.io.packaging.8.0.1.nupkg.sha512"
+    "C:\\Users\\post\\.nuget\\packages\\system.io.packaging\\8.0.1\\system.io.packaging.8.0.1.nupkg.sha512",
+    "C:\\Users\\post\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\8.0.29\\microsoft.netcore.app.runtime.win-x64.8.0.29.nupkg.sha512",
+    "C:\\Users\\post\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\8.0.29\\microsoft.windowsdesktop.app.runtime.win-x64.8.0.29.nupkg.sha512",
+    "C:\\Users\\post\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\8.0.29\\microsoft.aspnetcore.app.runtime.win-x64.8.0.29.nupkg.sha512"
   ],
   "logs": []
 }

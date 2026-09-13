@@ -13,21 +13,41 @@ public static class StartupManager
         @"Software\Microsoft\Windows\CurrentVersion\Run";
 
 
+    private static string GetStartupShortcutPath()
+    {
+        string startupFolder = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+        return System.IO.Path.Combine(startupFolder, "DesktopNotes.lnk");
+    }
+
     // =====================================================
     // ՄԻԱՑՎԱ՞Ծ Է
     // =====================================================
 
     public static bool IsEnabled()
     {
-        using RegistryKey? key =
-            Registry.CurrentUser.OpenSubKey(
-                RunKey,
-                false);
+        // 1. Ստուգում ենք Registry-ն
+        try
+        {
+            using RegistryKey? key = Registry.CurrentUser.OpenSubKey(RunKey, false);
+            if (key != null && key.GetValue(AppName) != null)
+            {
+                return true;
+            }
+        }
+        catch { }
 
-        if (key == null)
-            return false;
+        // 2. Ստուգում ենք Startup թղթապանակի դյուրանցումը (Inno Setup-ի ստեղծած)
+        try
+        {
+            string shortcutPath = GetStartupShortcutPath();
+            if (System.IO.File.Exists(shortcutPath))
+            {
+                return true;
+            }
+        }
+        catch { }
 
-        return key.GetValue(AppName) != null;
+        return false;
     }
 
 
@@ -61,16 +81,26 @@ public static class StartupManager
 
     public static void Disable()
     {
-        using RegistryKey? key =
-            Registry.CurrentUser.OpenSubKey(
-                RunKey,
-                true);
+        // 1. Մաքրում ենք Registry-ից
+        try
+        {
+            using RegistryKey? key = Registry.CurrentUser.OpenSubKey(RunKey, true);
+            if (key != null)
+            {
+                key.DeleteValue(AppName, false);
+            }
+        }
+        catch { }
 
-        if (key == null)
-            return;
-
-        key.DeleteValue(
-            AppName,
-            false);
+        // 2. Մաքրում ենք Startup թղթապանակի դյուրանցումը (եթե կա)
+        try
+        {
+            string shortcutPath = GetStartupShortcutPath();
+            if (System.IO.File.Exists(shortcutPath))
+            {
+                System.IO.File.Delete(shortcutPath);
+            }
+        }
+        catch { }
     }
 }

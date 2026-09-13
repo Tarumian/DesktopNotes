@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
 D:\Tarumian\DesktopNotes\App.xaml
-3-1357794118
+61176141945
 
-1296484136
+151561493681
 2181606270521
-MainWindow.xaml;PreferencesWindow.xaml;SearchWindow.xaml;
+AboutWindow.xaml;FontSelectionWindow.xaml;HelpWindow.xaml;MainWindow.xaml;PreferencesWindow.xaml;SearchWindow.xaml;
 
 False
 
