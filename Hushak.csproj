@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>Hushak</AssemblyName>
+    <RootNamespace>Hushak</RootNamespace>
+    <ApplicationIcon>Assets\Hushak.ico</ApplicationIcon>
+    <Version>1.5.15</Version>
+    <AssemblyVersion>1.5.15.0</AssemblyVersion>
+    <FileVersion>1.5.15.0</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="H.NotifyIcon.Wpf" Version="2.3.2" />
+    <Resource Include="Assets\Hushak.ico" />
+    <Resource Include="Assets\Pin.png" />
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
+  </ItemGroup>
+
+</Project>

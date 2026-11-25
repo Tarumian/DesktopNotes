@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Windows;
 
-namespace DesktopNotes
+namespace Hushak
 {
     // =========================================================
     // .DNOTE ՆԻՇՔԻ ՊԱՀՊԱՆՈՒՄ ԵՒ ԲԵՌՆՈՒՄ
@@ -17,21 +17,50 @@ namespace DesktopNotes
         // Լռելյայն .dnote նիշքի հասցեն
         // -----------------------------------------------------
 
+        public static string FolderPath
+        {
+            get
+            {
+                string folder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Hushak");
+                Directory.CreateDirectory(folder);
+                return folder;
+            }
+        }
+
         public static string FilePath
         {
             get
             {
-                string folder =
-                    Path.Combine(
-                        Environment.GetFolderPath(
-                            Environment.SpecialFolder.ApplicationData),
-                        "DesktopNotes");
+                string newPath = Path.Combine(FolderPath, "Hushak.dnote");
 
-                Directory.CreateDirectory(folder);
+                // Եթե նոր նիշքը դեռ չկա, ստուգենք նախորդ տարբերակների պահպանված նիշքերը և պատճենենք
+                if (!File.Exists(newPath))
+                {
+                    try
+                    {
+                        string sameFolderLegacy = Path.Combine(FolderPath, "DesktopNotes.dnote");
+                        string oldFolderLegacy = Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                            "DesktopNotes",
+                            "DesktopNotes.dnote");
 
-                return Path.Combine(
-                    folder,
-                    "DesktopNotes.dnote");
+                        if (File.Exists(sameFolderLegacy))
+                        {
+                            File.Copy(sameFolderLegacy, newPath, true);
+                        }
+                        else if (File.Exists(oldFolderLegacy))
+                        {
+                            File.Copy(oldFolderLegacy, newPath, true);
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                return newPath;
             }
         }
 
@@ -93,6 +122,9 @@ namespace DesktopNotes
                             RotationOrigin =
                                 store.RotationOrigin,
 
+                            RandomRotationForNewNotes =
+                                store.RandomRotationForNewNotes,
+
                             CustomSizes =
                                 store.CustomSizes,
 
@@ -104,6 +136,12 @@ namespace DesktopNotes
 
                             CustomPencilColors =
                                 store.CustomPencilColors,
+
+                            Language =
+                                store.Language,
+
+                            StoreAppId =
+                                store.StoreAppId,
 
                             Notes =
                                 store.Notes.Values.ToList(),
@@ -179,11 +217,22 @@ namespace DesktopNotes
             // Ընդհանուր չափերը եւ նախընտրանքները
             // -------------------------------------------------
 
-            store.NoteWidth =
-                file.NoteWidth > 0 ? file.NoteWidth : 150;
-
-            store.NoteHeight =
-                file.NoteHeight > 0 ? file.NoteHeight : 220;
+            // Լռելյայն չափը միշտ 150 × 220 է, եթե հատուկ չի ընտրված (կամ եթե 130x300 է / 300x220 է առաջացել)
+            if (file.NoteWidth == 150 && file.NoteHeight == 220)
+            {
+                store.NoteWidth = 150;
+                store.NoteHeight = 220;
+            }
+            else if (file.NoteWidth > 0 && file.NoteHeight > 0 && !(Math.Abs(file.NoteWidth - 130) < 0.1 && Math.Abs(file.NoteHeight - 300) < 0.1) && !(Math.Abs(file.NoteWidth - 300) < 0.1 && Math.Abs(file.NoteHeight - 220) < 0.1))
+            {
+                store.NoteWidth = file.NoteWidth;
+                store.NoteHeight = file.NoteHeight;
+            }
+            else
+            {
+                store.NoteWidth = 150;
+                store.NoteHeight = 220;
+            }
 
             if (!string.IsNullOrEmpty(file.NoteColor))
                 store.NoteColor = file.NoteColor;
@@ -216,8 +265,13 @@ namespace DesktopNotes
             if (!string.IsNullOrEmpty(file.RotationOrigin))
                 store.RotationOrigin = file.RotationOrigin;
 
+            store.RandomRotationForNewNotes = file.RandomRotationForNewNotes;
+
             if (file.CustomSizes != null)
+            {
                 store.CustomSizes = file.CustomSizes;
+                store.CustomSizes.RemoveAll(s => s.Contains("130") && s.Contains("300"));
+            }
 
             if (file.CustomNoteColors != null)
                 store.CustomNoteColors = file.CustomNoteColors;
@@ -227,6 +281,12 @@ namespace DesktopNotes
 
             if (file.CustomPencilColors != null)
                 store.CustomPencilColors = file.CustomPencilColors;
+
+            if (!string.IsNullOrEmpty(file.Language))
+                store.Language = file.Language;
+
+            if (!string.IsNullOrEmpty(file.StoreAppId))
+                store.StoreAppId = file.StoreAppId;
 
 
             // -------------------------------------------------

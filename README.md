@@ -1,7 +1,7 @@
-# DesktopNotes
+# Հուշակ (Hushak)
 
 <p align="center">
-  <img src="Assets/DesktopNotes.ico" alt="DesktopNotes Logo" width="96" height="96">
+  <img src="Assets/Hushak.ico" alt="Hushak Logo" width="96" height="96">
 </p>
 
 <p align="center">
@@ -11,7 +11,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?logo=windows" alt="Platform">
   <img src="https://img.shields.io/badge/.NET-8.0%20WPF-512BD4?logo=dotnet" alt=".NET 8 WPF">
-  <img src="https://img.shields.io/badge/Version-1.0-brightgreen" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1.5.15-brightgreen" alt="Version">
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
   <img src="https://img.shields.io/badge/Language-Հայերեն-orange" alt="Language">
 </p>
@@ -33,9 +33,10 @@
   - [9. Նախընտրությունների կարգավորում (Preferences)](#9-նախընտրությունների-կարգավորում-preferences)
 - [Ստեղնաշարային համադրություններ (Hotkeys)](#ստեղնաշարային-համադրություններ-hotkeys)
 - [Տեղադրում (Installation)](#տեղադրում-installation)
-  - [Եղանակ 1. Տեղադրիչով (Installer — Առաջարկվող)](#եղանակ-1-տեղադրիչով-installer--առաջարկվող)
-  - [Եղանակ 2. Դյուրակիր տարբերակ (Portable / Standalone)](#եղանակ-2-դյուրակիր-տարբերակ-portable--standalone)
-  - [Եղանակ 3. Ելակետային կոդից կառուցում (Build from Source)](#եղանակ-3-ելակետային-կոդից-կառուցում-build-from-source)
+  - [Եղանակ 1. WinGet-ով (Windows Package Manager — Առաջարկվող և արագ)](#եղանակ-1-winget-ով-windows-package-manager--առաջարկվող-և-արագ)
+  - [Եղանակ 2. Տեղադրիչով (Installer)](#եղանակ-2-տեղադրիչով-installer)
+  - [Եղանակ 3. Դյուրակիր տարբերակ (Portable / Standalone)](#եղանակ-3-դյուրակիր-տարբերակ-portable--standalone)
+  - [Եղանակ 4. Ելակետային կոդից կառուցում (Build from Source)](#եղանակ-4-ելակետային-կոդից-կառուցում-build-from-source)
 - [Ապատեղադրում (Uninstallation)](#ապատեղադրում-uninstallation)
   - [Տեղադրիչով տեղադրված ծրագրի ապատեղադրում](#տեղադրիչով-տեղադրված-ծրագրի-ապատեղադրում)
   - [Դյուրակիր (Portable) տարբերակի հեռացում](#դյուրակիր-portable-տարբերակի-հեռացում)
@@ -47,7 +48,7 @@
 
 ## Նկարագրություն
 
-**DesktopNotes**-ը նախատեսված է գրասեղանին արագ նշումներ կատարելու, կարևոր հիշեցումները միշտ աչքի առաջ պահելու, մատիտով ձեռագիր էսքիզներ անելու և բազմաթիվ թերթիկները կազմակերպված տրցակների մեջ խմբավորելու համար։
+**«Հուշակ» (Hushak)**-ը նախատեսված է գրասեղանին արագ նշումներ կատարելու, կարևոր հիշեցումները միշտ աչքի առաջ պահելու, մատիտով ձեռագիր էսքիզներ անելու և բազմաթիվ թերթիկները կազմակերպված տրցակների մեջ խմբավորելու համար։
 
 Ծրագիրը ստեղծված է ժամանակակից **.NET 8 (WPF)** հարթակի վրա, ունի ամբողջությամբ հայերեն օգտատիրական միջերես, թեթև է, արագագործ և չի ծանրաբեռնում համակարգիչը։
 
@@ -162,37 +163,56 @@
 
 ## Տեղադրում (Installation)
 
-Ծրագիրը կարող եք տեղադրել կամ գործարկել երեք տարբեր եղանակներով․
+Ծրագիրը կարող եք տեղադրել կամ գործարկել հետևյալ եղանակներով․
 
-### Եղանակ 1. Տեղադրիչով (Installer — Առաջարկվող)
+### Եղանակ 1. WinGet-ով (Windows Package Manager — Առաջարկվող և արագ)
 
-1. Անցեք GitHub-ի [Releases](../../releases) բաժին։
-2. Ներբեռնեք տեղադրման ֆայլը՝ `DesktopNotes_Setup_v1.0.exe`։
+Windows 10 (1809+) և Windows 11 համակարգերում ծրագիրը կարելի է տեղադրել անմիջապես հրամանի տողից (PowerShell, Windows Terminal կամ CMD)՝
+
+```powershell
+winget install Tarumian.Hushak
+```
+կամ կարճ անունով (moniker)․
+```powershell
+winget install hushak
+```
+
+> [!TIP]
+> **Ծրագիրը թարմացնելու համար** պարզապես գործարկեք․
+> ```powershell
+> winget upgrade Tarumian.Hushak
+> ```
+
+### Եղանակ 2. Տեղադրիչով (Installer)
+
+1. Այցելեք [tarumian.am/hushak](https://tarumian.am/hushak/) կամ GitLab-ի [Releases](../../-/releases) բաժին։
+2. Ներբեռնեք տեղադրման վերջին ֆայլը՝ `Hushak_Setup_v1.5.15.exe`։
 3. Գործարկեք ֆայլը․
-   - Տեղադրիչն ունի բազմալեզու աջակցություն (**Հայերեն**, English, Русский)։
-   - Տեղադրվում է օգտատիրոջ անձնական տիրույթում (`%LOCALAPPDATA%\Programs\DesktopNotes`), ինչի շնորհիվ ադմինիստրատորի (Administrator) լրացուցիչ իրավունքներ չեն պահանջվում։
+   - Տեղադրիչն ունի բազմալեզու աջակցություն (**Հայերեն**, English, Русский և այլն)։
+   - Տեղադրվում է օգտատիրոջ անձնական տիրույթում (`%LOCALAPPDATA%\Programs\Hushak`), ինչի շնորհիվ ադմինիստրատորի (Administrator) լրացուցիչ իրավունքներ չեն պահանջվում։
 4. Ընտրեք ցանկալի տարբերակները․
    - ☑ *Ստեղծել աշխատասեղանի պատկերակ (Create Desktop Icon)*
    - ☑ *Գործարկել Windows-ի մեկնարկի հետ (Run at Windows startup)*
+   - ☑ *Ավելացնել աշխատասեղանի աջ կտտոցի ցանկում*
 5. Սեղմեք **Տեղադրել**։ Տեղադրումն ավարտելուց հետո ծրագիրը պատրաստ է աշխատանքի։
 
-### Եղանակ 2. Դյուրակիր տարբերակ (Portable / Standalone)
+### Եղանակ 3. Դյուրակիր տարբերակ (Portable / Standalone)
 
 Եթե չեք ցանկանում որևէ բան տեղադրել համակարգում և նախընտրում եք ծրագիրը կրել Flash-կրիչի (կամ կամայական թղթապանակի) մեջ․
 
-1. Ներբեռնեք ինքնաբավ `DesktopNotes.exe` ֆայլը (առկա է `publish/standalone/` թղթապանակում կամ Releases-ում)։
+1. Ներբեռնեք `Hushak_Portable_v1.5.15.zip` կամ ինքնաբավ `Hushak.exe` ֆայլը (առկա է `publish/standalone/` թղթապանակում կամ Releases-ում)։
 2. Ծրագիրը կառուցված է որպես **Self-contained Single-file**, ինչը նշանակում է, որ համակարգչում նույնիսկ .NET Runtime-ի առկայություն չի պահանջվում․ անհրաժեշտ բոլոր գրադարանները ներդրված են `.exe` ֆայլի մեջ։
 3. Ուղղակի տեղադրեք այն Ձեր նախընտրած թղթապանակում և գործարկեք։
 
-### Եղանակ 3. Ելակետային կոդից կառուցում (Build from Source)
+### Եղանակ 4. Ելակետային կոդից կառուցում (Build from Source)
 
 Եթե ցանկանում եք ինքնուրույն հավաքել նախագիծը․
 
 1. Համոզվեք, որ համակարգչում տեղադրված է **[.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)** (Windows x64)։
 2. Պատճենեք ռեպոզիտորիան․
    ```powershell
-   git clone https://github.com/Tarumian/DesktopNotes.git
-   cd DesktopNotes
+   git clone https://gitlab.com/Tarumian/hushak.git
+   cd hushak
    ```
 3. Ծրագիրը գործարկելու համար․
    ```powershell
@@ -202,29 +222,34 @@
    ```powershell
    dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o .\publish\standalone
    ```
-5. Տեղադրիչ (Installer) կառուցելու համար (պահանջվում է [Inno Setup 6](https://jrsoftware.org/isdl.php))․
+5. Տեղադրիչ (Installer) և թողարկման փաթեթ կառուցելու համար (պահանջվում է [Inno Setup 6](https://jrsoftware.org/isdl.php))․
    Գործարկեք պատրաստի սկրիպտը․
    ```powershell
    .\build_installer.bat
    ```
-   Արդյունքում `publish\installer\` թղթապանակում կստեղծվի `DesktopNotes_Setup_v1.0.exe` ֆայլը։
+   Արդյունքում `publish\installer\` թղթապանակում կստեղծվի `Hushak_Setup_v1.5.15.exe` ֆայլը, `publish\hushak\`-ում՝ ամբողջական թողարկման փաթեթը, իսկ `manifests/` թղթապանակում՝ winget-ի համապատասխան մանիֆեստները։
 
 ---
 
 ## Ապատեղադրում (Uninstallation)
 
-### Տեղադրիչով տեղադրված ծրագրի ապատեղադրում
+### Տեղադրված ծրագրի ապատեղադրում
 
 Ծրագիրը համակարգից ամբողջությամբ հեռացնելու համար կարող եք օգտվել հետևյալ եղանակներից որևէ մեկից․
 
-- **Տարբերակ Ա (Windows-ի կարգավորումներից)․**
+- **Տարբերակ Ա (WinGet-ով — արագ)․**
+  ```powershell
+  winget uninstall Tarumian.Hushak
+  ```
+
+- **Տարբերակ Բ (Windows-ի կարգավորումներից)․**
   1. Բացեք Windows-ի **Կարգավորումները** (<kbd>Win</kbd> + <kbd>I</kbd>):
   2. Անցեք **Apps** (Հավելվածներ) $\rightarrow$ **Installed apps** (Տեղադրված հավելվածներ)։
-  3. Որոնման դաշտում գրեք `DesktopNotes`։
+  3. Որոնման դաշտում գրեք `Hushak`։
   4. Սեղմեք ընտրացանկի երեք կետերի վրա և ընտրեք **Uninstall** (Ապատեղադրել)։
 
-- **Տարբերակ Բ (Ապատեղադրիչի ֆայլով)․**
-  1. Բացեք ծրագրի տեղադրման թղթապանակը (լռելյայն՝ `%LOCALAPPDATA%\Programs\DesktopNotes`):
+- **Տարբերակ Գ (Ապատեղադրիչի ֆայլով)․**
+  1. Բացեք ծրագրի տեղադրման թղթապանակը (լռելյայն՝ `%LOCALAPPDATA%\Programs\Hushak`):
   2. Գործարկեք `unins000.exe` ֆայլը։
   3. Հաստատեք հեռացումը։
 
@@ -235,18 +260,18 @@
 
 Եթե օգտագործել եք standalone/portable տարբերակը․
 1. Աջ կտտոց կատարեք System Tray-ի պատկերակին և ընտրեք **Ելք**։
-2. Պարզապես ջնջեք `DesktopNotes.exe` ֆայլը կամ այն թղթապանակը, որտեղ այն գտնվում է։
+2. Պարզապես ջնջեք `Hushak.exe` ֆայլը կամ այն թղթապանակը, որտեղ այն գտնվում է։
 
 ### Օգտատիրոջ տվյալների պահուստավորում և մաքրում
 
 Ծրագրի բոլոր գրառումները, տրցակները և նախընտրությունները պահպանվում են մեկ միասնական ֆայլում․
 ```text
-%APPDATA%\DesktopNotes\DesktopNotes.dnote
+%APPDATA%\Hushak\Hushak.dnote
 ```
-(Ամբողջական ուղին՝ `C:\Users\<Օգտատեր>\AppData\Roaming\DesktopNotes\DesktopNotes.dnote`):
+(Ամբողջական ուղին՝ `C:\Users\<Օգտատեր>\AppData\Roaming\Hushak\Hushak.dnote`):
 
-- **Պահուստավորում (Backup)․** Եթե ցանկանում եք պահպանել Ձեր նշումները այլ համակարգիչ տեղափոխելու համար, պարզապես պատճենեք `DesktopNotes.dnote` ֆայլը։
-- **Ամբողջական մաքրում․** Եթե ապատեղադրումից հետո ցանկանում եք ջնջել նաև նախկինում արված բոլոր գրառումների պատմությունը, ջնջեք `%APPDATA%\DesktopNotes` թղթապանակը։
+- **Պահուստավորում (Backup)․** Եթե ցանկանում եք պահպանել Ձեր նշումները այլ համակարգիչ տեղափոխելու համար, պարզապես պատճենեք `Hushak.dnote` ֆայլը։
+- **Ամբողջական մաքրում․** Եթե ապատեղադրումից հետո ցանկանում եք ջնջել նաև նախկինում արված բոլոր գրառումների պատմությունը, ջնջեք `%APPDATA%\Hushak` թղթապանակը։
 
 ---
 

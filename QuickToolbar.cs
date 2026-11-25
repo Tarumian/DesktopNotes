@@ -8,7 +8,7 @@ using System.Windows.Media;
 using Forms = System.Windows.Forms;
 using Drawing = System.Drawing;
 
-namespace DesktopNotes;
+namespace Hushak;
 
 public partial class MainWindow
 {

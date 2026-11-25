@@ -1,6 +1,6 @@
 using System;
 
-namespace DesktopNotes
+namespace Hushak
 {
     public class NoteData
     {
@@ -29,11 +29,11 @@ namespace DesktopNotes
         public string NoteColor { get; set; } = "#FFF9A6";
 
         // Տեքստի ձեւավորման հիմնական տվյալները
-        public string FontFamily { get; set; } = "Arial";
-        public double FontSize { get; set; } = 18;
+        public string FontFamily { get; set; } = "Comic Sans MS";
+        public double FontSize { get; set; } = 14;
 
-        public bool IsBold { get; set; }
-        public bool IsItalic { get; set; }
+        public bool IsBold { get; set; } = false;
+        public bool IsItalic { get; set; } = false;
 
         public string TextColor { get; set; } = "#000000";
 

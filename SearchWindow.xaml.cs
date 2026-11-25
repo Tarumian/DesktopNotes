@@ -4,7 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace DesktopNotes
+namespace Hushak
 {
     public partial class SearchWindow : Window
     {
@@ -12,6 +12,18 @@ namespace DesktopNotes
         {
             InitializeComponent();
             LoadResults();
+            LocalizationManager.LanguageChanged += OnLanguageChanged;
+        }
+
+        private void OnLanguageChanged()
+        {
+            LoadResults();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            LocalizationManager.LanguageChanged -= OnLanguageChanged;
+            base.OnClosed(e);
         }
 
         private void CloseButton_Click(
@@ -267,6 +279,11 @@ namespace DesktopNotes
                         .Replace("\n", " ")
                         .Trim();
 
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    text = LocalizationManager.Get("UntitledNoteText");
+                }
+
                 if (string.IsNullOrWhiteSpace(keyword))
                 {
                     if (text.Length > 90)
@@ -368,8 +385,7 @@ namespace DesktopNotes
                 ResultsListBox.Items.Add(item);
             }
 
-            ResultCountText.Text =
-                "Գտնված է՝ " + notes.Count;
+            ResultCountText.Text = LocalizationManager.Format("FoundCountLabel", notes.Count);
         }
     }
 }

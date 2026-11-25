@@ -1,11 +1,12 @@
-<Window x:Class="DesktopNotes.PreferencesWindow"
+<Window x:Class="Hushak.PreferencesWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Նախընտրություններ"
-        Width="720"
-        Height="620"
+        xmlns:loc="clr-namespace:Hushak"
+        Title="{loc:Loc PreferencesTitle}"
+        Width="740"
+        Height="680"
         MinWidth="640"
-        MinHeight="520"
+        MinHeight="540"
         WindowStartupLocation="CenterScreen"
         Background="#F5F5F5">
 
@@ -22,7 +23,7 @@
             <Setter Property="BorderBrush" Value="#D0D0D0"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="ToolTip" Value="Հեռացնել ցանկից"/>
+            <Setter Property="ToolTip" Value="{loc:Loc RemoveFromListTooltip}"/>
         </Style>
 
         <!-- Գույնի ընտրության կոճակի ոճ -->
@@ -60,10 +61,107 @@
                 <StackPanel>
 
                     <!-- ================================ -->
-                    <!-- 1. ԹԵՐԹԻԿ -->
+                    <!-- 1. ԼԵԶՈՒ (LANGUAGE) -->
                     <!-- ================================ -->
 
-                    <TextBlock Text="Թերթիկ"
+                    <TextBlock Text="{loc:Loc LanguageSection}"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="#333333"
+                               Margin="0,0,0,10"/>
+
+                    <Grid Margin="0,0,0,14">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Լեզվի ընտրություն -->
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="0"
+                                   Text="{loc:Loc LanguageLabel}"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"/>
+
+                        <ComboBox x:Name="LanguageComboBox"
+                                  Grid.Row="0"
+                                  Grid.Column="1"
+                                  Width="220"
+                                  Height="26"
+                                  FontSize="12"
+                                  HorizontalAlignment="Left"
+                                  SelectionChanged="LanguageComboBox_SelectionChanged"/>
+
+                        <!-- AI translation note -->
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Text="{loc:Loc AiNoticeShort}"
+                                   FontSize="11"
+                                   Foreground="#777777"
+                                   Margin="0,6,0,0"/>
+                    </Grid>
+
+                    <Separator Margin="0,0,0,14" Background="#EBEBEB"/>
+
+                    <!-- ================================ -->
+                    <!-- 2. ԱՐԴԻԱՑՈՒՄՆԵՐ (UPDATES) -->
+                    <!-- ================================ -->
+
+                    <TextBlock Text="{loc:Loc UpdatesSection}"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="#333333"
+                               Margin="0,0,0,10"/>
+
+                    <Grid Margin="0,0,0,14">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="0"
+                                   Text="{loc:Loc UpdateSourceLabel}"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"/>
+
+                        <StackPanel Grid.Row="0"
+                                    Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <TextBlock Text="tarumian.am"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="#0066CC"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,12,0"/>
+
+                            <Button x:Name="CheckUpdatesPrefButton"
+                                    Content="{loc:Loc CheckUpdatesButton}"
+                                    Height="26"
+                                    Padding="10,0"
+                                    Background="#F7F7F7"
+                                    BorderBrush="#C5C5C5"
+                                    BorderThickness="1"
+                                    Cursor="Hand"
+                                    Click="CheckUpdatesPrefButton_Click"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Separator Margin="0,0,0,14" Background="#EBEBEB"/>
+
+                    <!-- ================================ -->
+                    <!-- 3. ԹԵՐԹԻԿ -->
+                    <!-- ================================ -->
+
+                    <TextBlock Text="{loc:Loc NoteSection}"
                                FontSize="14"
                                FontWeight="SemiBold"
                                Foreground="#333333"
@@ -77,17 +175,18 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="200"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
                         <!-- Չափ -->
                         <TextBlock Grid.Row="0"
                                    Grid.Column="0"
-                                   Text="Նոր թերթիկի չափ՝"
+                                   Text="{loc:Loc NewNoteSizeLabel}"
                                    FontSize="12"
                                    VerticalAlignment="Center"/>
 
@@ -96,7 +195,7 @@
                                     Orientation="Horizontal"
                                     VerticalAlignment="Center">
                             <ComboBox x:Name="NoteSizeComboBox"
-                                      Width="190"
+                                      Width="220"
                                       Height="26"
                                       FontSize="12"
                                       HorizontalAlignment="Left"
@@ -110,7 +209,7 @@
                         <!-- Թերթիկի գույն -->
                         <TextBlock Grid.Row="1"
                                    Grid.Column="0"
-                                   Text="Թերթիկի գույն՝"
+                                   Text="{loc:Loc NoteColorLabel}"
                                    FontSize="12"
                                    VerticalAlignment="Center"
                                    Margin="0,10,0,0"/>
@@ -122,7 +221,7 @@
                                     Margin="0,10,0,0">
 
                             <ComboBox x:Name="NoteColorComboBox"
-                                      Width="190"
+                                      Width="220"
                                       Height="26"
                                       FontSize="12"
                                       SelectionChanged="NoteColorComboBox_SelectionChanged"/>
@@ -136,7 +235,7 @@
                         <!-- Տեքստի գույն -->
                         <TextBlock Grid.Row="2"
                                    Grid.Column="0"
-                                   Text="Տեքստի գույն՝"
+                                   Text="{loc:Loc TextColorLabel}"
                                    FontSize="12"
                                    VerticalAlignment="Center"
                                    Margin="0,10,0,0"/>
@@ -148,7 +247,7 @@
                                     Margin="0,10,0,0">
 
                             <ComboBox x:Name="TextColorComboBox"
-                                      Width="190"
+                                      Width="220"
                                       Height="26"
                                       FontSize="12"
                                       SelectionChanged="TextColorComboBox_SelectionChanged"/>
@@ -162,7 +261,7 @@
                         <!-- Տրցակի հավասարեցում -->
                         <TextBlock Grid.Row="3"
                                    Grid.Column="0"
-                                   Text="Տրցակի հավասարեցում՝"
+                                   Text="{loc:Loc StackAlignmentLabel}"
                                    FontSize="12"
                                    VerticalAlignment="Center"
                                    Margin="0,10,0,0"/>
@@ -170,20 +269,20 @@
                         <ComboBox x:Name="StackAlignmentComboBox"
                                   Grid.Row="3"
                                   Grid.Column="1"
-                                  Width="190"
+                                  Width="220"
                                   Height="26"
                                   FontSize="12"
                                   HorizontalAlignment="Left"
                                   Margin="0,10,0,0">
-                            <ComboBoxItem Content="Վերին եզրի միջնակետ" Tag="TopCenter"/>
-                            <ComboBoxItem Content="Վերին ձախ անկյուն" Tag="TopLeft"/>
-                            <ComboBoxItem Content="Վերին աջ անկյուն" Tag="TopRight"/>
+                            <ComboBoxItem Content="{loc:Loc StackAlignTopCenterOpt}" Tag="TopCenter"/>
+                            <ComboBoxItem Content="{loc:Loc StackAlignTopLeftOpt}" Tag="TopLeft"/>
+                            <ComboBoxItem Content="{loc:Loc StackAlignTopRightOpt}" Tag="TopRight"/>
                         </ComboBox>
 
                         <!-- Պտտման/չափափոխման կետ -->
                         <TextBlock Grid.Row="4"
                                    Grid.Column="0"
-                                   Text="Պտտման/չափափոխման կետ՝"
+                                   Text="{loc:Loc RotationOriginLabel}"
                                    FontSize="12"
                                    VerticalAlignment="Center"
                                    Margin="0,10,0,0"/>
@@ -191,32 +290,40 @@
                         <ComboBox x:Name="RotationOriginComboBox"
                                   Grid.Row="4"
                                   Grid.Column="1"
-                                  Width="190"
+                                  Width="220"
                                   Height="26"
                                   FontSize="12"
                                   HorizontalAlignment="Left"
                                   Margin="0,10,0,0">
-                            <ComboBoxItem Content="Վերին եզրի միջնակետ (գամի կետ)" Tag="TopCenter"/>
-                            <ComboBoxItem Content="Վերին ձախ անկյուն" Tag="TopLeft"/>
+                            <ComboBoxItem Content="{loc:Loc RotationOriginTopCenterOpt}" Tag="TopCenter"/>
+                            <ComboBoxItem Content="{loc:Loc RotationOriginTopLeftOpt}" Tag="TopLeft"/>
                         </ComboBox>
 
                         <!-- Ազատ մեծացում -->
                         <CheckBox x:Name="AllowFreeResizeCheckBox"
                                   Grid.Row="5"
                                   Grid.Column="1"
-                                  Content="Թույլատրել թերթիկի չափի ազատ փոփոխում անկյունից (Resize)"
+                                  Content="{loc:Loc AllowFreeResizeLabel}"
                                   FontSize="12"
                                   Margin="0,12,0,0"/>
+
+                        <!-- Պատահական թեքում նոր թերթիկների համար -->
+                        <CheckBox x:Name="RandomRotationCheckBox"
+                                  Grid.Row="6"
+                                  Grid.Column="1"
+                                  Content="{loc:Loc RandomRotationLabel}"
+                                  FontSize="12"
+                                  Margin="0,10,0,0"/>
 
                     </Grid>
 
                     <Separator Margin="0,0,0,14" Background="#EBEBEB"/>
 
                     <!-- ================================ -->
-                    <!-- 2. ՏԱՌԱՏԵՍԱԿ -->
+                    <!-- 4. ՏԱՌԱՏԵՍԱԿ -->
                     <!-- ================================ -->
 
-                    <TextBlock Text="Տառատեսակ"
+                    <TextBlock Text="{loc:Loc FontSection}"
                                FontSize="14"
                                FontWeight="SemiBold"
                                Foreground="#333333"
@@ -231,21 +338,21 @@
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="200"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
                         <!-- Ընտանիք -->
                         <TextBlock Grid.Row="0"
                                    Grid.Column="0"
-                                   Text="Տառատեսակի ընտանիք՝"
+                                   Text="{loc:Loc FontFamilyLabel}"
                                    FontSize="12"
                                    VerticalAlignment="Center"/>
 
                         <ComboBox x:Name="FontFamilyComboBox"
                                   Grid.Row="0"
                                   Grid.Column="1"
-                                  Width="190"
+                                  Width="220"
                                   Height="26"
                                   FontSize="12"
                                   HorizontalAlignment="Left"
@@ -254,7 +361,7 @@
                         <!-- Կետաչափ -->
                         <TextBlock Grid.Row="1"
                                    Grid.Column="0"
-                                   Text="Կետաչափ՝"
+                                   Text="{loc:Loc FontSizeLabel}"
                                    FontSize="12"
                                    VerticalAlignment="Center"
                                    Margin="0,10,0,0"/>
@@ -274,7 +381,7 @@
                         <!-- Ոճ -->
                         <TextBlock Grid.Row="2"
                                    Grid.Column="0"
-                                   Text="Սկզբնական ոճ՝"
+                                   Text="{loc:Loc FontStyleLabel}"
                                    FontSize="12"
                                    VerticalAlignment="Center"
                                    Margin="0,10,0,0"/>
@@ -282,23 +389,23 @@
                         <ComboBox x:Name="FontStyleComboBox"
                                   Grid.Row="2"
                                   Grid.Column="1"
-                                  Width="130"
+                                  Width="150"
                                   Height="26"
                                   FontSize="12"
                                   HorizontalAlignment="Left"
                                   SelectedIndex="0"
                                   Margin="0,10,0,0"
                                   SelectionChanged="FontInput_Changed">
-                            <ComboBoxItem Content="Սովորական"/>
-                            <ComboBoxItem Content="Թավ"/>
-                            <ComboBoxItem Content="Շեղ"/>
-                            <ComboBoxItem Content="Թավ Շեղ"/>
+                            <ComboBoxItem Content="{loc:Loc StyleRegular}"/>
+                            <ComboBoxItem Content="{loc:Loc StyleBold}"/>
+                            <ComboBoxItem Content="{loc:Loc StyleItalic}"/>
+                            <ComboBoxItem Content="{loc:Loc StyleBoldItalic}"/>
                         </ComboBox>
 
                         <!-- Նախադիտում -->
                         <TextBlock Grid.Row="3"
                                    Grid.Column="0"
-                                   Text="Նախադիտում՝"
+                                   Text="{loc:Loc PreviewLabel}"
                                    FontSize="12"
                                    VerticalAlignment="Center"
                                    Margin="0,10,0,0"/>
@@ -315,7 +422,7 @@
                                 Width="280"
                                 HorizontalAlignment="Left">
                             <TextBlock x:Name="FontPreviewTextBlock"
-                                       Text="Աա Բբ Գգ 123 Փորձնական"
+                                       Text="{loc:Loc PreviewSampleText}"
                                        HorizontalAlignment="Left"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis"/>
@@ -326,10 +433,10 @@
                     <Separator Margin="0,0,0,14" Background="#EBEBEB"/>
 
                     <!-- ================================ -->
-                    <!-- 3. ՄԱՏԻՏ -->
+                    <!-- 5. ՄԱՏԻՏ -->
                     <!-- ================================ -->
 
-                    <TextBlock Text="Մատիտ"
+                    <TextBlock Text="{loc:Loc PencilSection}"
                                FontSize="14"
                                FontWeight="SemiBold"
                                Foreground="#333333"
@@ -342,14 +449,14 @@
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="200"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
                         <!-- Գույն -->
                         <TextBlock Grid.Row="0"
                                    Grid.Column="0"
-                                   Text="Գույն՝"
+                                   Text="{loc:Loc PencilColorLabel}"
                                    FontSize="12"
                                    VerticalAlignment="Center"/>
 
@@ -359,7 +466,7 @@
                                     VerticalAlignment="Center">
 
                             <ComboBox x:Name="PencilColorComboBox"
-                                      Width="190"
+                                      Width="220"
                                       Height="26"
                                       FontSize="12"
                                       SelectionChanged="PencilColorComboBox_SelectionChanged"/>
@@ -373,7 +480,7 @@
                         <!-- Հաստություն -->
                         <TextBlock Grid.Row="1"
                                    Grid.Column="0"
-                                   Text="Հաստություն՝"
+                                   Text="{loc:Loc PencilThicknessLabel}"
                                    FontSize="12"
                                    VerticalAlignment="Center"
                                    Margin="0,10,0,0"/>
@@ -394,23 +501,23 @@
                     <Separator Margin="0,0,0,14" Background="#EBEBEB"/>
 
                     <!-- ================================ -->
-                    <!-- 4. ՎԱՐՔԱԳԻԾ -->
+                    <!-- 6. ՎԱՐՔԱԳԻԾ -->
                     <!-- ================================ -->
 
-                    <TextBlock Text="Վարքագիծ"
+                    <TextBlock Text="{loc:Loc BehaviorSection}"
                                FontSize="14"
                                FontWeight="SemiBold"
                                Foreground="#333333"
                                Margin="0,0,0,10"/>
 
                     <CheckBox x:Name="AutostartCheckBox"
-                              Content="Windows-ի գործարկման ժամանակ ավտոմատ գործարկել DesktopNotes-ը"
+                              Content="{loc:Loc AutostartCheckbox}"
                               FontSize="12"
                               IsChecked="True"
                               Margin="0,0,0,8"/>
 
                     <CheckBox x:Name="ApplyToOpenNotesCheckBox"
-                              Content="Կիրառել նոր նախընտրանքները նաեւ արդեն բացված թերթիկների վրա"
+                              Content="{loc:Loc ApplyToOpenNotesCheckbox}"
                               FontSize="12"
                               IsChecked="False"
                               Margin="0,0,0,6"/>
@@ -438,7 +545,7 @@
 
             <Button x:Name="SaveButton"
                     Grid.Column="1"
-                    Content="Պահպանել"
+                    Content="{loc:Loc Save}"
                     Width="90"
                     Height="30"
                     IsDefault="True"
@@ -446,7 +553,7 @@
 
             <Button x:Name="CancelButton"
                     Grid.Column="3"
-                    Content="Չեղարկել"
+                    Content="{loc:Loc Cancel}"
                     Width="90"
                     Height="30"
                     IsCancel="True"

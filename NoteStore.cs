@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 
-namespace DesktopNotes
+namespace Hushak
 {
     // =========================================================
-    // DESKTOPNOTES-Ի ՏՎՅԱԼՆԵՐԻ ԿԵՆՏՐՈՆԱԿԱՆ ՊԱՀՈՑ
+    // HUSHAK-Ի ՏՎՅԱԼՆԵՐԻ ԿԵՆՏՐՈՆԱԿԱՆ ՊԱՀՈՑ
     // =========================================================
 
     public class NoteStore
@@ -70,6 +70,9 @@ namespace DesktopNotes
         // Պտտման եւ չափափոխման առանցք ("TopCenter", "TopLeft")
         public string RotationOrigin { get; set; } = "TopCenter";
 
+        // Նոր թերթիկների պատահական թեքում (մոտավորապես +/- 20°)
+        public bool RandomRotationForNewNotes { get; set; } = true;
+
         // Օգտվողի կողմից ավելացված չափեր (օրինակ՝ "200 × 300")
         public List<string> CustomSizes { get; set; } = new List<string>();
 
@@ -79,5 +82,9 @@ namespace DesktopNotes
         public List<string> CustomTextColors { get; set; } = new List<string>();
 
         public List<string> CustomPencilColors { get; set; } = new List<string>();
+
+        public string Language { get; set; } = "hy";
+
+        public string StoreAppId { get; set; } = "";
     }
 }

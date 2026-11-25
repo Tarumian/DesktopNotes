@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace DesktopNotes
+namespace Hushak
 {
     public partial class FontSelectionWindow : Window
     {
@@ -73,7 +73,6 @@ namespace DesktopNotes
                 }
             }
 
-            // Ընտրություն
             int selectIndex = 0;
             for (int i = 0; i < FontFamilyComboBox.Items.Count; i++)
             {
@@ -111,7 +110,7 @@ namespace DesktopNotes
             if (double.TryParse(FontSizeTextBox?.Text?.Trim(), out double sz) && sz >= 6 && sz <= 120)
             {
                 SelectedFontSize = sz;
-                PreviewTextBlock.FontSize = Math.Min(24, sz); // Clamp preview size so it fits nicely
+                PreviewTextBlock.FontSize = Math.Min(24, sz);
             }
 
             int styleIdx = FontStyleComboBox?.SelectedIndex ?? 0;
@@ -135,7 +134,7 @@ namespace DesktopNotes
             }
             else
             {
-                MessageBox.Show(this, "Կետաչափը պետք է լինի 6-ից 120 միջակայքում:", "Տառատեսակ", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(this, LocalizationManager.Get("FontSizeRangeError"), LocalizationManager.Get("FontSelectionTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 FontSizeTextBox.Focus();
                 return;
             }

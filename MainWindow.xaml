@@ -1,7 +1,8 @@
-<Window x:Class="DesktopNotes.MainWindow"
+<Window x:Class="Hushak.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Desktop Note"
+        xmlns:loc="clr-namespace:Hushak"
+        Title="{loc:Loc AppName}"
         Width="500"
         Height="500"
         WindowStyle="None"
@@ -26,47 +27,48 @@
             <ContextMenu x:Name="NoteContextMenu"
                          Opened="NoteContextMenu_Opened">
 
-                <MenuItem Header="Նոր թերթիկ"
+                <MenuItem Header="{loc:Loc NewNote}"
                           InputGestureText="Ctrl+N"
                           Click="NewNote_Click"/>
 
-                <MenuItem Header="Որոնել թերթիկներ"
+                <MenuItem Header="{loc:Loc SearchNotes}"
                           InputGestureText="Ctrl+F"
                           Click="SearchNotes_Click"/>
 
                 <MenuItem x:Name="DetachFromStackMenuItem"
-                          Header="Հեռացնել տրցակից"
+                          Header="{loc:Loc DetachFromStack}"
                           Click="DetachFromStackMenu_Click"
                           Visibility="Collapsed"/>
 
                 <Separator/>
 
-                <MenuItem Header="Ուղղահայաց դիրք (0°)"
+                <MenuItem x:Name="ResetRotationZeroMenuItem"
+                          Header="{loc:Loc VerticalPosition}"
                           Click="ResetRotationZero_Click"/>
 
-                <MenuItem Header="Պտտման կետ">
+                <MenuItem Header="{loc:Loc RotationOrigin}">
                     <MenuItem x:Name="RotationOriginTopCenterMenuItem"
-                              Header="Վերեւի մեջտեղ (գամի կետ)"
+                              Header="{loc:Loc RotationOriginTopCenter}"
                               Click="RotationOriginTopCenter_Click"/>
                     <MenuItem x:Name="RotationOriginTopLeftMenuItem"
-                              Header="Ձախ վերեւի անկյուն"
+                              Header="{loc:Loc RotationOriginTopLeft}"
                               Click="RotationOriginTopLeft_Click"/>
                 </MenuItem>
 
                 <MenuItem x:Name="PinMenuItem"
-                          Header="Գամել ամենավերեւում"
+                          Header="{loc:Loc PinToTop}"
                           Click="TogglePin_Click"/>
 
                 <Separator/>
 
                 <MenuItem x:Name="PencilMenuItem"
-                          Header="Մատիտ"
+                          Header="{loc:Loc Pencil}"
                           InputGestureText="Ctrl+P"
                           Click="TogglePencil_Click"/>
 
                 <Separator/>
 
-                <MenuItem Header="Տառատեսակ">
+                <MenuItem Header="{loc:Loc Font}">
                     <MenuItem Header="Comic Sans MS"
                               Click="FontComicSans_Click"/>
                     <MenuItem Header="Calibri"
@@ -77,10 +79,10 @@
                               Click="FontArial_Click"/>
                     <MenuItem Header="Times New Roman"
                               Click="FontTimes_Click"/>
-                    <MenuItem Header="Այլ..."
+                    <MenuItem Header="{loc:Loc OtherEllipsis}"
                               Click="FontCustom_Click"/>
                 </MenuItem>
-                <MenuItem Header="Թերթիկի գույն">
+                <MenuItem Header="{loc:Loc NoteColor}">
                     <MenuItem StaysOpenOnClick="False" FocusVisualStyle="{x:Null}">
                         <MenuItem.Template>
                             <ControlTemplate TargetType="MenuItem">
@@ -92,13 +94,13 @@
                                     <WrapPanel Width="120"
                                                Orientation="Horizontal"
                                                HorizontalAlignment="Center">
-                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#FFF59D" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#FFF59D" ToolTip="Դեղին"/>
-                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#C8E6C9" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#C8E6C9" ToolTip="Կանաչ"/>
-                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#BBDEFB" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#BBDEFB" ToolTip="Կապույտ"/>
-                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#F8BBD0" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#F8BBD0" ToolTip="Վարդագույն"/>
-                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#E1BEE7" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#E1BEE7" ToolTip="Մանուշակագույն"/>
-                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#FFFFFF" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#FFFFFF" ToolTip="Սպիտակ"/>
-                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#F5F5F5" BorderBrush="#999999" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorCustom_Click" ToolTip="Այլ գույն...">
+                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#FFF59D" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#FFF59D" ToolTip="{loc:Loc ColorYellow}"/>
+                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#C8E6C9" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#C8E6C9" ToolTip="{loc:Loc ColorGreen}"/>
+                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#BBDEFB" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#BBDEFB" ToolTip="{loc:Loc ColorBlue}"/>
+                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#F8BBD0" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#F8BBD0" ToolTip="{loc:Loc ColorPink}"/>
+                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#E1BEE7" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#E1BEE7" ToolTip="{loc:Loc ColorPurple}"/>
+                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#FFFFFF" BorderBrush="#B0B0B0" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorSwatch_Click" Tag="#FFFFFF" ToolTip="{loc:Loc ColorWhite}"/>
+                                        <Border Width="24" Height="24" Margin="3" CornerRadius="3" Background="#F5F5F5" BorderBrush="#999999" BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="NoteColorCustom_Click" ToolTip="{loc:Loc CustomColorTooltip}">
                                             <TextBlock Text="+" FontSize="14" FontWeight="Bold" Foreground="#555555" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-2,0,0"/>
                                         </Border>
                                     </WrapPanel>
@@ -108,7 +110,7 @@
                     </MenuItem>
                 </MenuItem>
 
-                <MenuItem Header="Չափ">
+                <MenuItem Header="{loc:Loc Size}">
                     <MenuItem Header="150 × 220"
                               Click="Size150x220_Click"/>
                     <MenuItem Header="300 × 220"
@@ -119,32 +121,40 @@
 
                 <Separator/>
 
-                <MenuItem Header="Արտահանել Excel"
+                <MenuItem Header="{loc:Loc ExportExcel}"
                           Click="ExportExcel_Click"/>
 
                 <Separator/>
 
-                <MenuItem Header="Օգնություն"
+                <MenuItem Header="{loc:Loc Preferences}"
+                          Click="PreferencesMenu_Click"/>
+
+                <MenuItem Header="{loc:Loc CheckForUpdates}"
+                          Click="CheckUpdatesMenu_Click"/>
+
+                <Separator/>
+
+                <MenuItem Header="{loc:Loc Help}"
                           Click="HelpMenu_Click"/>
 
-                <MenuItem Header="Ծրագրի մասին"
+                <MenuItem Header="{loc:Loc About}"
                           Click="AboutMenu_Click"/>
 
                 <Separator/>
 
                 <MenuItem x:Name="UndoDeleteMenuItem"
-                          Header="Հետարկել"
+                          Header="{loc:Loc Undo}"
                           InputGestureText="Ctrl+Z"
                           Click="UndoDelete_Click"
                           IsEnabled="False"/>
 
                 <MenuItem x:Name="RedoMenuItem"
-                          Header="Վերարկել"
+                          Header="{loc:Loc Redo}"
                           InputGestureText="Ctrl+Y"
                           Click="Redo_Click"
                           IsEnabled="False"/>
 
-                <MenuItem Header="Փակել"
+                <MenuItem Header="{loc:Loc Close}"
                           InputGestureText="Ctrl+W"
                           Click="CloseMenu_Click"/>
 
@@ -159,7 +169,7 @@
         <Border x:Name="Note"
                 MinWidth="140"
                 MinHeight="80"
-                Width="300"
+                Width="150"
                 Height="220"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Top"
@@ -245,8 +255,8 @@
         <!-- + Նոր թերթիկ -->
         <Button x:Name="NewButton"
                 Content="+"
-                Width="25"
-                Height="25"
+                Width="24"
+                Height="24"
                 FontSize="18"
                 Foreground="#555555"
                 Background="Transparent"
@@ -257,9 +267,14 @@
 
             <Button.Template>
                 <ControlTemplate TargetType="Button">
-                    <ContentPresenter
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"/>
+                    <Border Background="Transparent"
+                            CornerRadius="2"
+                            Width="{TemplateBinding Width}"
+                            Height="{TemplateBinding Height}">
+                        <ContentPresenter
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"/>
+                    </Border>
                 </ControlTemplate>
             </Button.Template>
 
@@ -286,9 +301,8 @@
         <!-- − Ջնջել -->
         <Button x:Name="DeleteButton"
                 Content="−"
-                Width="25"
-                Height="25"
-                Margin="-7,0,0,0"
+                Width="24"
+                Height="24"
                 FontSize="18"
                 Foreground="#555555"
                 Background="Transparent"
@@ -300,9 +314,14 @@
 
             <Button.Template>
                 <ControlTemplate TargetType="Button">
-                    <ContentPresenter
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"/>
+                    <Border Background="Transparent"
+                            CornerRadius="2"
+                            Width="{TemplateBinding Width}"
+                            Height="{TemplateBinding Height}">
+                        <ContentPresenter
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"/>
+                    </Border>
                 </ControlTemplate>
             </Button.Template>
 
@@ -326,34 +345,38 @@
             </Button.Style>
         </Button>
 
-<Button x:Name="CompleteButton"
-        Content="✓"
-        Width="25"
-        Height="25"
-        Margin="-7,0,0,0"
-        FontSize="15"
-        Foreground="#555555"
-        Background="Transparent"
-        BorderThickness="0"
-        Padding="0"
-        FocusVisualStyle="{x:Null}"
-        MouseEnter="CompleteButton_MouseEnter"
-        MouseLeave="CompleteButton_MouseLeave"
-        Click="CompleteButton_Click"
-        ToolTipService.Placement="Mouse"
-        ToolTipService.ShowDuration="5000">
+        <Button x:Name="CompleteButton"
+                Content="✓"
+                Width="24"
+                Height="24"
+                FontSize="15"
+                Foreground="#555555"
+                Background="Transparent"
+                BorderThickness="0"
+                Padding="0"
+                FocusVisualStyle="{x:Null}"
+                MouseEnter="CompleteButton_MouseEnter"
+                MouseLeave="CompleteButton_MouseLeave"
+                Click="CompleteButton_Click"
+                ToolTipService.Placement="Mouse"
+                ToolTipService.ShowDuration="5000">
 
-    <Button.Template>
-        <ControlTemplate TargetType="Button">
-            <ContentPresenter
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"/>
-        </ControlTemplate>
-    </Button.Template>
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="Transparent"
+                            CornerRadius="2"
+                            Width="{TemplateBinding Width}"
+                            Height="{TemplateBinding Height}">
+                        <ContentPresenter
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Button.Template>
 
-</Button>
+        </Button>
 
-</StackPanel>
+    </StackPanel>
 </Grid>
 
 
@@ -890,7 +913,7 @@
                                  SelectionChanged="NoteText_SelectionChanged"
                                  FontFamily="Comic Sans MS"
                                  FontSize="14"
-                                 Foreground="#222222"
+                                 Foreground="#000000"
                                  Background="Transparent"
                                  BorderThickness="0"
                                  Padding="0"
@@ -905,7 +928,16 @@
                                  MouseRightButtonDown="NoteText_MouseRightButtonDown"
                                  PreviewMouseLeftButtonDown="NoteText_PreviewMouseLeftButtonDown"
                                  PreviewMouseMove="NoteText_PreviewMouseMove"
-                                 PreviewMouseLeftButtonUp="NoteText_PreviewMouseLeftButtonUp"/>
+                                 PreviewMouseLeftButtonUp="NoteText_PreviewMouseLeftButtonUp">
+                        <RichTextBox.Resources>
+                            <Style TargetType="{x:Type Paragraph}">
+                                <Setter Property="Margin" Value="0"/>
+                                <Setter Property="LineHeight" Value="NaN"/>
+                                <Setter Property="LineStackingStrategy" Value="MaxHeight"/>
+                            </Style>
+                        </RichTextBox.Resources>
+                        <FlowDocument PagePadding="0"/>
+                    </RichTextBox>
 
                     <InkCanvas x:Name="NoteInkCanvas"
                                HorizontalAlignment="Stretch"
@@ -943,9 +975,14 @@
 
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <ContentPresenter
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"/>
+                            <Border Background="Transparent"
+                                    CornerRadius="2"
+                                    Width="{TemplateBinding Width}"
+                                    Height="{TemplateBinding Height}">
+                                <ContentPresenter
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"/>
+                            </Border>
                         </ControlTemplate>
                     </Button.Template>
 

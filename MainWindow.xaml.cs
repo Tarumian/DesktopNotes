@@ -15,7 +15,7 @@ using System.Windows.Ink;
 using Forms = System.Windows.Forms;
 
 
-namespace DesktopNotes
+namespace Hushak
 {
     public partial class MainWindow : Window
 {
@@ -42,11 +42,112 @@ namespace DesktopNotes
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool BringWindowToTop(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    private const int SW_RESTORE = 9;
+
     private static readonly IntPtr HWND_TOP = IntPtr.Zero;
     private const uint SWP_NOSIZE = 0x0001;
     private const uint SWP_NOMOVE = 0x0002;
     private const uint SWP_SHOWWINDOW = 0x0040;
     private const uint SWP_NOACTIVATE = 0x0010;
+
+    private const int WM_SYSCOMMAND = 0x0112;
+    private const int SC_MINIMIZE = 0xF020;
+    private const int WM_WINDOWPOSCHANGING = 0x0046;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct WINDOWPOS
+    {
+        public IntPtr hwnd;
+        public IntPtr hwndInsertAfter;
+        public int x;
+        public int y;
+        public int cx;
+        public int cy;
+        public uint flags;
+    }
+
+    private void HookWindowProc()
+    {
+        var helper = new System.Windows.Interop.WindowInteropHelper(this);
+        if (helper.Handle != IntPtr.Zero)
+        {
+            var source = System.Windows.Interop.HwndSource.FromHwnd(helper.Handle);
+            source?.AddHook(WndProc);
+        }
+    }
+
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == WM_SYSCOMMAND)
+        {
+            int command = wParam.ToInt32() & 0xFFF0;
+            if (command == SC_MINIMIZE)
+            {
+                // Կանխում ենք «Show Desktop» (Win+D) հրամանով թերթիկի ծալումը / անհետացումը
+                handled = true;
+                return IntPtr.Zero;
+            }
+        }
+        else if (msg == WM_WINDOWPOSCHANGING)
+        {
+            try
+            {
+                WINDOWPOS pos = Marshal.PtrToStructure<WINDOWPOS>(lParam);
+                if (pos.x <= -30000 || pos.y <= -30000)
+                {
+                    // Երբ Windows-ը փորձում է պատուհանը տեղափոխել (-32000, -32000), արգելափակում ենք
+                    pos.flags |= (SWP_NOMOVE | SWP_NOSIZE);
+                    Marshal.StructureToPtr(pos, lParam, true);
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        return IntPtr.Zero;
+    }
+
+    public void BringToFrontAndActivate()
+    {
+        Visibility = Visibility.Visible;
+        if (WindowState != WindowState.Normal)
+        {
+            WindowState = WindowState.Normal;
+        }
+
+        Show();
+
+        IntPtr hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+        if (hwnd != IntPtr.Zero)
+        {
+            ShowWindow(hwnd, SW_RESTORE);
+
+            // Պարտադրում ենք բարձրանալ աշխատասեղանի ֆոնից վերև
+            SetWindowPos(hwnd, new IntPtr(-1) /* HWND_TOPMOST */, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+            if (!Data.IsPinned)
+            {
+                SetWindowPos(hwnd, new IntPtr(-2) /* HWND_NOTOPMOST */, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+            }
+
+            BringWindowToTop(hwnd);
+            SetForegroundWindow(hwnd);
+        }
+
+        Activate();
+        Focus();
+    }
 
     // =========================================================
     // WINDOW-Ի ԵՐԿՐԱՉԱՓՈՒԹՅՈՒՆ
@@ -195,6 +296,8 @@ private void ApplyDataToWindow()
                 Data.TextColor));
 
 
+    NoteText.Document.PagePadding = new Thickness(0);
+
     // =====================================================
     // RTF
     // =====================================================
@@ -221,7 +324,12 @@ private void ApplyDataToWindow()
         NoteText.Document.Blocks.Clear();
 
         Paragraph paragraph =
-            new Paragraph();
+            new Paragraph
+            {
+                Margin = new Thickness(0),
+                LineHeight = double.NaN,
+                LineStackingStrategy = LineStackingStrategy.MaxHeight
+            };
 
         paragraph.Inlines.Add(
             new Run(Data.Text));
@@ -332,8 +440,27 @@ private void InitializeNoteVisuals()
 {
     NoteStore currentStore = ((App)Application.Current).Store;
 
-    Data.Width = currentStore.NoteWidth;
-    Data.Height = currentStore.NoteHeight;
+    // Լռելյայն չափը նոր թերթիկի համար միշտ 150 × 220 է
+    if (currentStore.NoteWidth <= 0 || currentStore.NoteHeight <= 0 ||
+        (Math.Abs(currentStore.NoteWidth - 130) < 0.1 && Math.Abs(currentStore.NoteHeight - 300) < 0.1) ||
+        (Math.Abs(currentStore.NoteWidth - 300) < 0.1 && Math.Abs(currentStore.NoteHeight - 220) < 0.1))
+    {
+        currentStore.NoteWidth = 150;
+        currentStore.NoteHeight = 220;
+    }
+
+    double defaultW = 150;
+    double defaultH = 220;
+
+    if (currentStore.NoteWidth >= 100 && currentStore.NoteWidth <= 1000 &&
+        currentStore.NoteHeight >= 80 && currentStore.NoteHeight <= 1000)
+    {
+        defaultW = currentStore.NoteWidth;
+        defaultH = currentStore.NoteHeight;
+    }
+
+    Data.Width = defaultW;
+    Data.Height = defaultH;
     Data.NoteColor = currentStore.NoteColor;
     Data.TextColor = currentStore.TextColor;
     Data.FontFamily = currentStore.FontFamily;
@@ -343,7 +470,20 @@ private void InitializeNoteVisuals()
 
     Note.Width = Data.Width;
     Note.Height = Data.Height;
-    NoteRotation.Angle = 0;
+    Width = Math.Max(1200, Data.Width + 600);
+    Height = Math.Max(1200, Data.Height + 600);
+
+    if (currentStore.RandomRotationForNewNotes)
+    {
+        double randomAngle = GenerateRandomRotationAngle();
+        NoteRotation.Angle = randomAngle;
+        Data.Rotation = randomAngle;
+    }
+    else
+    {
+        NoteRotation.Angle = 0;
+        Data.Rotation = 0;
+    }
 
     Note.Background =
         new SolidColorBrush(
@@ -366,12 +506,39 @@ private void InitializeNoteVisuals()
             (Color)ColorConverter.ConvertFromString(
                 Data.TextColor));
 
+    NoteText.Document.PagePadding = new Thickness(0);
     NoteText.Document.Blocks.Clear();
     NoteText.Document.Blocks.Add(
-        new Paragraph());
+        new Paragraph
+        {
+            Margin = new Thickness(0),
+            LineHeight = double.NaN,
+            LineStackingStrategy = LineStackingStrategy.MaxHeight
+        });
 
     LoadInkFromData();
     UpdatePencilDrawingAttributes();
+    UpdateRotationOrigin();
+}
+
+private static double GenerateRandomRotationAngle()
+{
+    // Պատահական նշան (+ կամ - ուղղաձիգի նկատմամբ)
+    double sign = Random.Shared.Next(0, 2) == 0 ? -1.0 : 1.0;
+    double magnitude;
+
+    // Թերթիկների զգալի մասը (~80%)՝ 1-ից 12 աստիճանի ընդգրկույթում,
+    // իսկ 12-ից 20 աստիճանի անկյունները՝ ավելի հազվադեպ (~20%)
+    if (Random.Shared.NextDouble() < 0.80)
+    {
+        magnitude = 1.0 + Random.Shared.NextDouble() * (12.0 - 1.0);
+    }
+    else
+    {
+        magnitude = 12.0 + Random.Shared.NextDouble() * (20.0 - 12.0);
+    }
+
+    return Math.Round(sign * magnitude, 1);
 }
 
 public MainWindow(
@@ -512,31 +679,74 @@ private void SetCurrentNoteSize(
     double width,
     double height)
 {
-    double oldWidth = Note.Width > 0 ? Note.Width : Data.Width;
-    double deltaW = width - oldWidth;
-
-    Data.Width = width;
-    Data.Height = height;
-
-    Note.Width = width;
-    Note.Height = height;
-
     NoteStore store = ((App)Application.Current).Store;
-    if (store.RotationOrigin != "TopLeft" && Math.Abs(deltaW) > 0.001)
+    bool applyToAll = (Keyboard.Modifiers & (ModifierKeys.Shift | ModifierKeys.Control)) != 0;
+
+    Dictionary<Guid, NoteSizeSnapshot> previousSizes = new Dictionary<Guid, NoteSizeSnapshot>();
+    Dictionary<Guid, NoteSizeSnapshot> newSizes = new Dictionary<Guid, NoteSizeSnapshot>();
+
+    List<MainWindow> targetWindows = new List<MainWindow>();
+    if (applyToAll && Data.StackId != null && store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
     {
-        Left -= deltaW / 2.0;
-        Data.Left = Left;
+        targetWindows.AddRange(Application.Current.Windows.OfType<MainWindow>().Where(w => stack.NoteIds.Contains(w.NoteId)));
+    }
+    else
+    {
+        targetWindows.Add(this);
     }
 
-    UpdateWindowSizeForRotation(false);
-    UpdateDataFromWindow();
-
-    if (Data.StackId != null && store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
+    foreach (MainWindow win in targetWindows)
     {
-        ApplyStackAlignment(stack, this);
+        double oldW = win.Note.Width > 0 ? win.Note.Width : win.Data.Width;
+        double oldH = win.Note.Height > 0 ? win.Note.Height : win.Data.Height;
+        previousSizes[win.NoteId] = new NoteSizeSnapshot
+        {
+            Width = oldW,
+            Height = oldH,
+            Left = win.Left,
+            Top = win.Top
+        };
+
+        double deltaW = width - oldW;
+        win.Data.Width = width;
+        win.Data.Height = height;
+        win.Note.Width = width;
+        win.Note.Height = height;
+
+        if (store.RotationOrigin != "TopLeft" && Math.Abs(deltaW) > 0.001)
+        {
+            win.Left -= deltaW / 2.0;
+            win.Data.Left = win.Left;
+        }
+
+        win.UpdateWindowSizeForRotation(false);
+        win.UpdateDataFromWindow();
+        win.SaveCurrentState();
+
+        newSizes[win.NoteId] = new NoteSizeSnapshot
+        {
+            Width = width,
+            Height = height,
+            Left = win.Left,
+            Top = win.Top
+        };
+    }
+
+    if (Data.StackId != null && store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? currentStack))
+    {
+        ApplyStackAlignment(currentStack, this);
     }
 
     DnoteStorage.Save(store);
+
+    if (previousSizes.Count > 0)
+    {
+        AppUndoManager.PushAction(new NoteSizeChangeUndoAction
+        {
+            PreviousSizes = previousSizes,
+            NewSizes = newSizes
+        });
+    }
 }
 
 private void Size150x220_Click(
@@ -570,6 +780,7 @@ private void Size220x220_Click(
         {
             Loaded -= MainWindow_Loaded;
 
+            HookWindowProc();
             UpdateWindowSizeForRotation(false);
             UpdateResizeGripState();
         }
@@ -604,8 +815,7 @@ private void Size220x220_Click(
             newNote.Data.Left = newNote.Left;
             newNote.Data.Top = newNote.Top;
 
-            newNote.Show();
-            newNote.Activate();
+            newNote.BringToFrontAndActivate();
             newNote.SaveCurrentState();
             newNote.NoteText.Focus();
         }
@@ -674,7 +884,7 @@ private void Size220x220_Click(
 
             if (!isRotating &&
                 !isMoving &&
-                !CloseButton.IsMouseOver)
+                !EditButtons.IsMouseOver)
             {
                 EditButtons.Visibility =
                     Visibility.Collapsed;
@@ -966,7 +1176,7 @@ private void DeleteButton_Click(
                     Background = Brushes.Transparent,
                     BorderThickness = new Thickness(0),
                     Padding = new Thickness(0),
-                    FontFamily = new FontFamily(note.FontFamily ?? "Arial"),
+                    FontFamily = new FontFamily(note.FontFamily ?? "Comic Sans MS"),
                     FontSize = note.FontSize > 0 ? note.FontSize : 14,
                     FontWeight = note.IsBold ? FontWeights.Bold : FontWeights.Normal,
                     FontStyle = note.IsItalic ? FontStyles.Italic : FontStyles.Normal,
@@ -1073,11 +1283,11 @@ private void DeleteButton_Click(
                 new Microsoft.Win32.SaveFileDialog
                 {
                     Title = "Արտահանել Excel",
-                    Filter = "Excel ֆայլ (*.xlsx)|*.xlsx",
+                    Filter = "Excel նիշք (*.xlsx)|*.xlsx",
                     DefaultExt = ".xlsx",
                     AddExtension = true,
                     FileName =
-                        "DesktopNotes_" +
+                        "Hushak_" +
                         DateTime.Now.ToString("yyyy-MM-dd_HH-mm")
                 };
 
@@ -1170,19 +1380,45 @@ private void DeleteButton_Click(
                 }
 
         MessageBox.Show(
-            "Excel ֆայլը հաջողությամբ ստեղծվեց։",
-            "DesktopNotes");
+            LocalizationManager.Format("ExportSuccess", dialog.FileName),
+            LocalizationManager.Get("AppName"),
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
     }
     catch (Exception ex)
     {
         MessageBox.Show(
-            "Excel ֆայլը ստեղծել չհաջողվեց։\n\n" +
-            ex.Message,
-            "DesktopNotes",
+            LocalizationManager.Format("ExportFailed", ex.Message),
+            LocalizationManager.Get("AppName"),
             MessageBoxButton.OK,
             MessageBoxImage.Error);
     }
 }
+
+        private void PreferencesMenu_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            PreferencesWindow[] prefWindows = Application.Current.Windows.OfType<PreferencesWindow>().ToArray();
+            if (prefWindows.Length > 0)
+            {
+                prefWindows[0].Show();
+                prefWindows[0].Activate();
+                return;
+            }
+            PreferencesWindow prefWindow = new PreferencesWindow();
+            prefWindow.Show();
+            prefWindow.Activate();
+        }
+
+        private void CheckUpdatesMenu_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            UpdateWindow updateWindow = new UpdateWindow();
+            updateWindow.Owner = this;
+            updateWindow.ShowDialog();
+        }
 
         private void HelpMenu_Click(
             object sender,
@@ -1285,6 +1521,18 @@ private void DeleteButton_Click(
 
             bool inStack = Data.StackId != null && store.Stacks.ContainsKey(Data.StackId.Value);
             DetachFromStackMenuItem.Visibility = inStack ? Visibility.Visible : Visibility.Collapsed;
+
+            string baseVerticalHeader = LocalizationManager.Get("VerticalPosition");
+            if (inStack)
+            {
+                ResetRotationZeroMenuItem.Header = $"{baseVerticalHeader}";
+                ResetRotationZeroMenuItem.ToolTip = "Սեղմեք միայն այս թերթիկի համար, կամ պահեք Shift/Ctrl՝ ամբողջ տրցակի համար";
+            }
+            else
+            {
+                ResetRotationZeroMenuItem.Header = baseVerticalHeader;
+                ResetRotationZeroMenuItem.ToolTip = null;
+            }
         }
 
 
@@ -1480,6 +1728,10 @@ private void DeleteButton_Click(
                     current == MoveArea ||
                     current == ResizeGrip ||
                     current == PinButton ||
+                    current == EditButtons ||
+                    current == NewButton ||
+                    current == DeleteButton ||
+                    current == CompleteButton ||
                     current == StackNavigationBar)
                 {
                     return true;
@@ -1646,6 +1898,7 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
         private Point resizeStartMouseScreen;
         private double resizeStartWidth;
         private double resizeStartHeight;
+        private Dictionary<Guid, NoteSizeSnapshot>? resizeStartSnapshots;
 
         private void ResizeGrip_MouseLeftButtonDown(
             object sender,
@@ -1658,6 +1911,31 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
             resizeStartMouseScreen = PointToScreen(e.GetPosition(this));
             resizeStartWidth = Note.Width > 0 ? Note.Width : Data.Width;
             resizeStartHeight = Note.Height > 0 ? Note.Height : Data.Height;
+
+            resizeStartSnapshots = new Dictionary<Guid, NoteSizeSnapshot>();
+            NoteStore store = ((App)Application.Current).Store;
+            bool applyToAll = (Keyboard.Modifiers & (ModifierKeys.Shift | ModifierKeys.Control)) != 0;
+
+            if (applyToAll && Data.StackId != null && store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
+            {
+                foreach (MainWindow win in Application.Current.Windows.OfType<MainWindow>().Where(w => stack.NoteIds.Contains(w.NoteId)))
+                {
+                    double w = win.Note.Width > 0 ? win.Note.Width : win.Data.Width;
+                    double h = win.Note.Height > 0 ? win.Note.Height : win.Data.Height;
+                    resizeStartSnapshots[win.NoteId] = new NoteSizeSnapshot { Width = w, Height = h, Left = win.Left, Top = win.Top };
+                }
+            }
+            else
+            {
+                resizeStartSnapshots[NoteId] = new NoteSizeSnapshot
+                {
+                    Width = resizeStartWidth,
+                    Height = resizeStartHeight,
+                    Left = Left,
+                    Top = Top
+                };
+            }
+
             ResizeGrip.CaptureMouse();
             e.Handled = true;
         }
@@ -1687,13 +1965,31 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
             double newWidth = Math.Max(140, resizeStartWidth + deltaX);
             double newHeight = Math.Max(80, resizeStartHeight + deltaY);
 
-            Note.Width = newWidth;
-            Note.Height = newHeight;
-            Data.Width = newWidth;
-            Data.Height = newHeight;
+            NoteStore store = ((App)Application.Current).Store;
+            bool applyToAll = (Keyboard.Modifiers & (ModifierKeys.Shift | ModifierKeys.Control)) != 0 || (resizeStartSnapshots != null && resizeStartSnapshots.Count > 1);
 
-            Width = Math.Max(Width, newWidth + 600);
-            Height = Math.Max(Height, newHeight + 600);
+            if (applyToAll && Data.StackId != null && store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
+            {
+                foreach (MainWindow win in Application.Current.Windows.OfType<MainWindow>().Where(w => stack.NoteIds.Contains(w.NoteId)))
+                {
+                    win.Note.Width = newWidth;
+                    win.Note.Height = newHeight;
+                    win.Data.Width = newWidth;
+                    win.Data.Height = newHeight;
+                    win.Width = Math.Max(win.Width, newWidth + 600);
+                    win.Height = Math.Max(win.Height, newHeight + 600);
+                }
+            }
+            else
+            {
+                Note.Width = newWidth;
+                Note.Height = newHeight;
+                Data.Width = newWidth;
+                Data.Height = newHeight;
+
+                Width = Math.Max(Width, newWidth + 600);
+                Height = Math.Max(Height, newHeight + 600);
+            }
 
             e.Handled = true;
         }
@@ -1709,14 +2005,70 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
             if (ResizeGrip.IsMouseCaptured)
                 ResizeGrip.ReleaseMouseCapture();
 
-            UpdateDataFromWindow();
+            NoteStore store = ((App)Application.Current).Store;
+            Dictionary<Guid, NoteSizeSnapshot> newSnapshots = new Dictionary<Guid, NoteSizeSnapshot>();
 
-            if (Data.StackId != null && ((App)Application.Current).Store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
+            if (resizeStartSnapshots != null && resizeStartSnapshots.Count > 1 && Data.StackId != null && store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
             {
+                foreach (MainWindow win in Application.Current.Windows.OfType<MainWindow>().Where(w => stack.NoteIds.Contains(w.NoteId)))
+                {
+                    win.UpdateDataFromWindow();
+                    win.SaveCurrentState();
+                    newSnapshots[win.NoteId] = new NoteSizeSnapshot
+                    {
+                        Width = win.Note.Width,
+                        Height = win.Note.Height,
+                        Left = win.Left,
+                        Top = win.Top
+                    };
+                }
                 ApplyStackAlignment(stack, this);
             }
+            else
+            {
+                UpdateDataFromWindow();
+                SaveCurrentState();
+                newSnapshots[NoteId] = new NoteSizeSnapshot
+                {
+                    Width = Note.Width,
+                    Height = Note.Height,
+                    Left = Left,
+                    Top = Top
+                };
 
-            DnoteStorage.Save(((App)Application.Current).Store);
+                if (Data.StackId != null && store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? singleStack))
+                {
+                    ApplyStackAlignment(singleStack, this);
+                }
+            }
+
+            if (resizeStartSnapshots != null && resizeStartSnapshots.Count > 0)
+            {
+                bool anyChanged = false;
+                foreach (var kvp in resizeStartSnapshots)
+                {
+                    if (newSnapshots.TryGetValue(kvp.Key, out var endSnap))
+                    {
+                        if (Math.Abs(endSnap.Width - kvp.Value.Width) > 0.5 || Math.Abs(endSnap.Height - kvp.Value.Height) > 0.5)
+                        {
+                            anyChanged = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (anyChanged)
+                {
+                    AppUndoManager.PushAction(new NoteSizeChangeUndoAction
+                    {
+                        PreviousSizes = resizeStartSnapshots,
+                        NewSizes = newSnapshots
+                    });
+                }
+            }
+            resizeStartSnapshots = null;
+
+            DnoteStorage.Save(store);
             e.Handled = true;
         }
 
@@ -2414,11 +2766,43 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
 
         private void SetCurrentNoteColor(string hex)
         {
-            Data.NoteColor = hex;
-            Note.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
-            UpdatePinVisual();
-            UpdateDataFromWindow();
-            DnoteStorage.Save(((App)Application.Current).Store);
+            NoteStore store = ((App)Application.Current).Store;
+            bool applyToAll = (Keyboard.Modifiers & (ModifierKeys.Shift | ModifierKeys.Control)) != 0;
+
+            Dictionary<Guid, string> previousColors = new Dictionary<Guid, string>();
+            List<MainWindow> targetWindows = new List<MainWindow>();
+
+            if (applyToAll && Data.StackId != null && store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
+            {
+                targetWindows.AddRange(Application.Current.Windows.OfType<MainWindow>().Where(w => stack.NoteIds.Contains(w.NoteId)));
+            }
+            else
+            {
+                targetWindows.Add(this);
+            }
+
+            foreach (MainWindow win in targetWindows)
+            {
+                string oldColor = !string.IsNullOrEmpty(win.Data.NoteColor) ? win.Data.NoteColor : "#FFF9A6";
+                previousColors[win.NoteId] = oldColor;
+
+                win.Data.NoteColor = hex;
+                win.Note.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
+                win.UpdatePinVisual();
+                win.UpdateDataFromWindow();
+                win.SaveCurrentState();
+            }
+
+            DnoteStorage.Save(store);
+
+            if (previousColors.Count > 0)
+            {
+                AppUndoManager.PushAction(new NoteColorChangeUndoAction
+                {
+                    PreviousColors = previousColors,
+                    NewColor = hex
+                });
+            }
         }
 
         private void NoteColorSwatch_Click(object sender, MouseButtonEventArgs e)
@@ -2755,15 +3139,12 @@ private void NoteWindow_PreviewMouseLeftButtonDown(
 
 private void UpdateCompleteToolTip()
 {
-    string created =
-        Data.CreatedAt.ToString("dd.MM.yyyy HH:mm");
+    string created = LocalizationManager.Format("CreatedDateShort", Data.CreatedAt.ToString("dd.MM.yyyy HH:mm"));
 
     if (Data.IsCompleted &&
         Data.CompletedDate.HasValue)
     {
-        string completed =
-            Data.CompletedDate.Value.ToString(
-                "dd.MM.yyyy HH:mm");
+        string completed = LocalizationManager.Format("CompletedDateShort", Data.CompletedDate.Value.ToString("dd.MM.yyyy HH:mm"));
 
         CompleteButton.ToolTip =
             created + "\n" + completed;
@@ -2942,8 +3323,9 @@ private void CompleteButton_MouseLeave(
         {
             NoteStore store = ((App)Application.Current).Store;
             Dictionary<Guid, double> previousAngles = new Dictionary<Guid, double>();
+            bool applyToAll = (Keyboard.Modifiers & (ModifierKeys.Shift | ModifierKeys.Control)) != 0;
 
-            if (Data.StackId != null && store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
+            if (applyToAll && Data.StackId != null && store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? stack))
             {
                 foreach (Guid noteId in stack.NoteIds)
                 {
@@ -2969,7 +3351,6 @@ private void CompleteButton_MouseLeave(
                 }
 
                 ApplyStackAlignment(stack);
-
                 DnoteStorage.Save(store);
             }
             else
@@ -2981,6 +3362,12 @@ private void CompleteButton_MouseLeave(
                     Data.Rotation = 0;
                     UpdateWindowSizeForRotation(false);
                     SaveCurrentState();
+
+                    if (Data.StackId != null && store.Stacks.TryGetValue(Data.StackId.Value, out NoteStack? singleStack))
+                    {
+                        ApplyStackAlignment(singleStack, this);
+                    }
+                    DnoteStorage.Save(store);
                 }
             }
 
@@ -3088,11 +3475,23 @@ private void CompleteButton_MouseLeave(
 
             try
             {
+                NoteStore store = ((App)Application.Current).Store;
+
+                // Ապահովում ենք, որ տրցակում թերթիկները ՄԻՇՏ դասավորված են ըստ ստեղծման ամսաթվի (հնագույնից մինչև նորագույն)
+                stack.NoteIds = stack.NoteIds
+                    .Where(id => store.Notes.ContainsKey(id))
+                    .OrderBy(id => store.Notes[id].CreatedAt)
+                    .ToList();
+
+                if (!stack.NoteIds.Contains(noteId))
+                {
+                    noteId = stack.NoteIds.LastOrDefault();
+                }
+
                 stack.CurrentNoteId = noteId;
                 int activeIndex = stack.NoteIds.IndexOf(noteId);
                 if (activeIndex < 0) return;
 
-                NoteStore store = ((App)Application.Current).Store;
                 MainWindow[] openNotes = Application.Current.Windows.OfType<MainWindow>().ToArray();
 
                 // 1. Ապահովում ենք, որ բոլոր թերթիկները բացված են
@@ -3505,14 +3904,42 @@ private void CompleteButton_MouseLeave(
             // Դասավորում ըստ ստեղծման ամսաթվի (հին -> նոր)
             notes = notes.OrderBy(n => n.CreatedAt).ToList();
 
+            // Նախնական տվյալների պահպանում Undo-ի համար
+            List<NoteStackSnapshotItem> previousNotes = new List<NoteStackSnapshotItem>();
+            foreach (var n in notes)
+            {
+                MainWindow? w = windowsToStack.FirstOrDefault(win => win.Data.Id == n.Id);
+                previousNotes.Add(new NoteStackSnapshotItem
+                {
+                    NoteId = n.Id,
+                    Left = w != null ? w.Left : n.Left,
+                    Top = w != null ? w.Top : n.Top,
+                    StackId = n.StackId,
+                    StackOrder = n.StackOrder,
+                    Rotation = w != null ? w.NoteRotation.Angle : n.Rotation
+                });
+            }
+
             // Հեռացնում ենք թերթիկների հին տրցակների գրառումները
             HashSet<Guid> oldStackIds = notes
                 .Where(n => n.StackId != null)
                 .Select(n => n.StackId!.Value)
                 .ToHashSet();
 
+            List<NoteStack> previousStacks = new List<NoteStack>();
             foreach (Guid oldId in oldStackIds)
             {
+                if (store.Stacks.TryGetValue(oldId, out NoteStack? oldStack))
+                {
+                    previousStacks.Add(new NoteStack
+                    {
+                        Id = oldStack.Id,
+                        NoteIds = new List<Guid>(oldStack.NoteIds),
+                        CurrentNoteId = oldStack.CurrentNoteId,
+                        Alignment = oldStack.Alignment,
+                        IsZeroRotation = oldStack.IsZeroRotation
+                    });
+                }
                 store.Stacks.Remove(oldId);
             }
 
@@ -3533,24 +3960,30 @@ private void CompleteButton_MouseLeave(
 
             anchorWin.ApplyStackAlignment(stack, anchorWin);
 
-            // Բոլոր թերթիկները տեսանելի են տակից (եթե ավելի մեծ են կամ այլ անկյան տակ)
-            foreach (MainWindow w in windowsToStack.OrderBy(win => notes.FindIndex(n => n.Id == win.Data.Id)))
-            {
-                w.Visibility = Visibility.Visible;
-                w.UpdateStackUI();
-            }
-
-            MainWindow? topWin = windowsToStack.FirstOrDefault(w => w.Data.Id == stack.CurrentNoteId);
+            // Ակտիվացնում ենք վերևի (ամենանոր) թերթիկը և կարգավորում Z-order-ն ու տեսանելիությունը
+            MainWindow? topWin = windowsToStack.FirstOrDefault(w => w.Data.Id == stack.CurrentNoteId) ?? anchorWin;
             if (topWin != null)
             {
+                topWin.SetActiveStackNote(stack, stack.CurrentNoteId.Value);
                 topWin.PlayStackGlowEffect();
-                topWin.Visibility = Visibility.Visible;
-                topWin.UpdateStackUI();
-                topWin.Activate();
-                topWin.Focus();
             }
 
             DnoteStorage.Save(store);
+
+            AppUndoManager.PushAction(new StackMergeUndoAction
+            {
+                PreviousNotes = previousNotes,
+                PreviousStacks = previousStacks,
+                NewStack = new NoteStack
+                {
+                    Id = stack.Id,
+                    NoteIds = new List<Guid>(stack.NoteIds),
+                    CurrentNoteId = stack.CurrentNoteId,
+                    Alignment = stack.Alignment,
+                    IsZeroRotation = stack.IsZeroRotation
+                },
+                AnchorNoteId = anchorWin.NoteId
+            });
         }
 
         public void DetachFromStack(
@@ -3596,22 +4029,14 @@ private void CompleteButton_MouseLeave(
             }
             else
             {
+                Guid targetId = stack.CurrentNoteId ?? stack.NoteIds.LastOrDefault();
                 MainWindow? topWin =
                     Application.Current.Windows.OfType<MainWindow>()
-                        .FirstOrDefault(w => w.NoteId == stack.CurrentNoteId);
+                        .FirstOrDefault(w => w.NoteId == targetId);
 
                 if (topWin != null)
                 {
-                    topWin.Visibility = Visibility.Visible;
-                    topWin.UpdateStackUI();
-                }
-
-                foreach (MainWindow win in Application.Current.Windows.OfType<MainWindow>())
-                {
-                    if (stack.NoteIds.Contains(win.NoteId))
-                    {
-                        win.UpdateStackUI();
-                    }
+                    topWin.SetActiveStackNote(stack, targetId);
                 }
             }
 
@@ -3849,7 +4274,6 @@ private void CompleteButton_MouseLeave(
                 toMerge.AddRange(
                     Application.Current.Windows.OfType<MainWindow>()
                         .Where(w => thisStack.NoteIds.Contains(w.NoteId)));
-                store.Stacks.Remove(thisStack.Id);
             }
             else
             {
@@ -3862,7 +4286,6 @@ private void CompleteButton_MouseLeave(
                 toMerge.AddRange(
                     Application.Current.Windows.OfType<MainWindow>()
                         .Where(w => targetStack.NoteIds.Contains(w.NoteId)));
-                store.Stacks.Remove(targetStack.Id);
             }
             else
             {
@@ -3937,6 +4360,145 @@ private void CompleteButton_MouseLeave(
                     win.SaveCurrentState();
                 }
             }
+            DnoteStorage.Save(store);
+        }
+    }
+
+    public class NoteColorChangeUndoAction : IAppUndoAction
+    {
+        public string Description => "Հետարկել գույնի փոփոխությունը";
+        public string RedoDescription => "Վերարկել գույնի փոփոխությունը";
+        public Dictionary<Guid, string> PreviousColors { get; set; } = new Dictionary<Guid, string>();
+        public string NewColor { get; set; } = string.Empty;
+
+        public void Undo()
+        {
+            NoteStore store = ((App)Application.Current).Store;
+            foreach (var kvp in PreviousColors)
+            {
+                if (store.Notes.TryGetValue(kvp.Key, out NoteData? noteData))
+                {
+                    noteData.NoteColor = kvp.Value;
+                }
+
+                MainWindow? win = Application.Current.Windows.OfType<MainWindow>()
+                    .FirstOrDefault(w => w.NoteId == kvp.Key);
+
+                if (win != null)
+                {
+                    win.Data.NoteColor = kvp.Value;
+                    win.Note.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(kvp.Value));
+                    win.UpdatePinVisual();
+                    win.SaveCurrentState();
+                }
+            }
+            DnoteStorage.Save(store);
+        }
+
+        public void Redo()
+        {
+            NoteStore store = ((App)Application.Current).Store;
+            foreach (var kvp in PreviousColors)
+            {
+                if (store.Notes.TryGetValue(kvp.Key, out NoteData? noteData))
+                {
+                    noteData.NoteColor = NewColor;
+                }
+
+                MainWindow? win = Application.Current.Windows.OfType<MainWindow>()
+                    .FirstOrDefault(w => w.NoteId == kvp.Key);
+
+                if (win != null)
+                {
+                    win.Data.NoteColor = NewColor;
+                    win.Note.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(NewColor));
+                    win.UpdatePinVisual();
+                    win.SaveCurrentState();
+                }
+            }
+            DnoteStorage.Save(store);
+        }
+    }
+
+    public class NoteSizeSnapshot
+    {
+        public double Width { get; set; }
+        public double Height { get; set; }
+        public double Left { get; set; }
+        public double Top { get; set; }
+    }
+
+    public class NoteSizeChangeUndoAction : IAppUndoAction
+    {
+        public string Description => "Հետարկել չափի փոփոխությունը";
+        public string RedoDescription => "Վերարկել չափի փոփոխությունը";
+        public Dictionary<Guid, NoteSizeSnapshot> PreviousSizes { get; set; } = new Dictionary<Guid, NoteSizeSnapshot>();
+        public Dictionary<Guid, NoteSizeSnapshot> NewSizes { get; set; } = new Dictionary<Guid, NoteSizeSnapshot>();
+
+        public void Undo()
+        {
+            ApplySizes(PreviousSizes);
+        }
+
+        public void Redo()
+        {
+            ApplySizes(NewSizes);
+        }
+
+        private static void ApplySizes(Dictionary<Guid, NoteSizeSnapshot> sizes)
+        {
+            NoteStore store = ((App)Application.Current).Store;
+            HashSet<Guid> affectedStackIds = new HashSet<Guid>();
+
+            foreach (var kvp in sizes)
+            {
+                Guid noteId = kvp.Key;
+                NoteSizeSnapshot snap = kvp.Value;
+
+                if (store.Notes.TryGetValue(noteId, out NoteData? noteData))
+                {
+                    noteData.Width = snap.Width;
+                    noteData.Height = snap.Height;
+                    noteData.Left = snap.Left;
+                    noteData.Top = snap.Top;
+
+                    if (noteData.StackId != null)
+                    {
+                        affectedStackIds.Add(noteData.StackId.Value);
+                    }
+                }
+
+                MainWindow? win = Application.Current.Windows.OfType<MainWindow>()
+                    .FirstOrDefault(w => w.NoteId == noteId);
+
+                if (win != null)
+                {
+                    win.Note.Width = snap.Width;
+                    win.Note.Height = snap.Height;
+                    win.Data.Width = snap.Width;
+                    win.Data.Height = snap.Height;
+                    win.Left = snap.Left;
+                    win.Top = snap.Top;
+                    win.Data.Left = snap.Left;
+                    win.Data.Top = snap.Top;
+                    win.UpdateWindowSizeForRotation(false);
+                    win.SaveCurrentState();
+                }
+            }
+
+            foreach (Guid stackId in affectedStackIds)
+            {
+                if (store.Stacks.TryGetValue(stackId, out NoteStack? stack))
+                {
+                    MainWindow? topWin = Application.Current.Windows.OfType<MainWindow>()
+                        .FirstOrDefault(w => w.NoteId == (stack.CurrentNoteId ?? stack.NoteIds.LastOrDefault()));
+                    if (topWin != null)
+                    {
+                        topWin.ApplyStackAlignment(stack, topWin);
+                    }
+                }
+            }
+
             DnoteStorage.Save(store);
         }
     }
@@ -4167,6 +4729,148 @@ private void CompleteButton_MouseLeave(
                         topWin.ApplyStackAlignment(stack);
                     }
                 }
+            }
+
+            DnoteStorage.Save(store);
+        }
+    }
+
+    public class NoteStackSnapshotItem
+    {
+        public Guid NoteId { get; set; }
+        public double Left { get; set; }
+        public double Top { get; set; }
+        public Guid? StackId { get; set; }
+        public int StackOrder { get; set; }
+        public double Rotation { get; set; }
+    }
+
+    public class StackMergeUndoAction : IAppUndoAction
+    {
+        public string Description => "Հետարկել տրցակի կազմումը";
+        public string RedoDescription => "Վերարկել տրցակի կազմումը";
+
+        public List<NoteStackSnapshotItem> PreviousNotes { get; set; } = new List<NoteStackSnapshotItem>();
+        public List<NoteStack> PreviousStacks { get; set; } = new List<NoteStack>();
+        public NoteStack NewStack { get; set; } = new NoteStack();
+        public Guid AnchorNoteId { get; set; }
+
+        public void Undo()
+        {
+            NoteStore store = ((App)Application.Current).Store;
+            MainWindow[] openNotes = Application.Current.Windows.OfType<MainWindow>().ToArray();
+
+            // 1. Հեռացնում ենք նոր կազմված տրցակը
+            store.Stacks.Remove(NewStack.Id);
+
+            // 2. Վերականգնում ենք նախկին տրցակները
+            foreach (var oldStack in PreviousStacks)
+            {
+                store.Stacks[oldStack.Id] = new NoteStack
+                {
+                    Id = oldStack.Id,
+                    NoteIds = new List<Guid>(oldStack.NoteIds),
+                    CurrentNoteId = oldStack.CurrentNoteId,
+                    Alignment = oldStack.Alignment,
+                    IsZeroRotation = oldStack.IsZeroRotation
+                };
+            }
+
+            // 3. Վերականգնում ենք թերթիկների հատկանիշները (դիրք, տրցակ, պտտում)
+            foreach (var snap in PreviousNotes)
+            {
+                if (store.Notes.TryGetValue(snap.NoteId, out NoteData? data))
+                {
+                    data.Left = snap.Left;
+                    data.Top = snap.Top;
+                    data.StackId = snap.StackId;
+                    data.StackOrder = snap.StackOrder;
+                    data.Rotation = snap.Rotation;
+                }
+
+                MainWindow? win = openNotes.FirstOrDefault(w => w.NoteId == snap.NoteId);
+                if (win != null)
+                {
+                    win.Left = snap.Left;
+                    win.Top = snap.Top;
+                    win.Data.Left = snap.Left;
+                    win.Data.Top = snap.Top;
+                    win.Data.StackId = snap.StackId;
+                    win.Data.StackOrder = snap.StackOrder;
+                    win.Data.Rotation = snap.Rotation;
+                    win.NoteRotation.Angle = snap.Rotation;
+                    win.Visibility = Visibility.Visible;
+                    win.UpdateWindowSizeForRotation(false);
+                    win.UpdateStackUI();
+                    win.SaveCurrentState();
+                }
+            }
+
+            // 4. Հավասարեցնում և թարմացնում ենք վերականգնված տրցակները
+            foreach (var oldStack in PreviousStacks)
+            {
+                Guid targetId = oldStack.CurrentNoteId ?? oldStack.NoteIds.LastOrDefault();
+                MainWindow? topWin = openNotes.FirstOrDefault(w => w.NoteId == targetId);
+                if (topWin != null)
+                {
+                    topWin.SetActiveStackNote(oldStack, targetId);
+                }
+            }
+
+            DnoteStorage.Save(store);
+        }
+
+        public void Redo()
+        {
+            NoteStore store = ((App)Application.Current).Store;
+            MainWindow[] openNotes = Application.Current.Windows.OfType<MainWindow>().ToArray();
+
+            // 1. Հեռացնում ենք հին տրցակները
+            foreach (var oldStack in PreviousStacks)
+            {
+                store.Stacks.Remove(oldStack.Id);
+            }
+
+            // 2. Ավելացնում ենք միասնական տրցակը
+            NoteStack stack = new NoteStack
+            {
+                Id = NewStack.Id,
+                NoteIds = new List<Guid>(NewStack.NoteIds),
+                CurrentNoteId = NewStack.CurrentNoteId,
+                Alignment = NewStack.Alignment,
+                IsZeroRotation = NewStack.IsZeroRotation
+            };
+            store.Stacks[stack.Id] = stack;
+
+            // 3. Կապում ենք թերթիկները նոր տրցակին
+            foreach (Guid noteId in stack.NoteIds)
+            {
+                if (store.Notes.TryGetValue(noteId, out NoteData? data))
+                {
+                    data.StackId = stack.Id;
+                }
+                MainWindow? win = openNotes.FirstOrDefault(w => w.NoteId == noteId);
+                if (win != null)
+                {
+                    win.Data.StackId = stack.Id;
+                }
+            }
+
+            // 4. Կիրառում ենք հավասարեցում և ակտիվացնում վերևի թերթիկը
+            MainWindow? anchorWin = openNotes.FirstOrDefault(w => w.NoteId == AnchorNoteId)
+                ?? openNotes.FirstOrDefault(w => w.NoteId == (stack.CurrentNoteId ?? stack.NoteIds.LastOrDefault()));
+
+            if (anchorWin != null)
+            {
+                anchorWin.ApplyStackAlignment(stack, anchorWin);
+            }
+
+            Guid targetId = stack.CurrentNoteId ?? stack.NoteIds.LastOrDefault();
+            MainWindow? topWin = openNotes.FirstOrDefault(w => w.NoteId == targetId) ?? anchorWin;
+            if (topWin != null)
+            {
+                topWin.SetActiveStackNote(stack, targetId);
+                topWin.PlayStackGlowEffect();
             }
 
             DnoteStorage.Save(store);

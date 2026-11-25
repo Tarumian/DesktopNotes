@@ -7,11 +7,12 @@ using System.Windows.Media;
 using Forms = System.Windows.Forms;
 using Drawing = System.Drawing;
 
-namespace DesktopNotes
+namespace Hushak
 {
     public partial class PreferencesWindow : Window
     {
         private readonly NoteStore store;
+        private readonly string initialLanguage;
 
         // Ամրագրված չափեր
         private readonly List<string> defaultSizes = new()
@@ -67,6 +68,7 @@ namespace DesktopNotes
             InitializeComponent();
 
             store = ((App)Application.Current).Store;
+            initialLanguage = store.Language;
 
             LoadAllPreferences();
         }
@@ -77,6 +79,9 @@ namespace DesktopNotes
 
         private void LoadAllPreferences()
         {
+            // 0. Լեզու
+            PopulateLanguageComboBox(store.Language);
+
             // 1. Չափեր
             PopulateSizeComboBox(string.Format("{0} × {1}", (int)store.NoteWidth, (int)store.NoteHeight));
 
@@ -125,10 +130,62 @@ namespace DesktopNotes
             // 9. Ազատ մեծացում
             AllowFreeResizeCheckBox.IsChecked = store.AllowFreeResize;
 
+            // 9.5. Պատահական թեքում նոր թերթիկների համար
+            RandomRotationCheckBox.IsChecked = store.RandomRotationForNewNotes;
+
             // 10. Windows Startup
             AutostartCheckBox.IsChecked = StartupManager.IsEnabled();
 
             UpdateFontPreview();
+        }
+
+        // =========================================================
+        // ԼԵԶՎԻ ԸՆՏՐՈՒԹՅՈՒՆ
+        // =========================================================
+
+        private void PopulateLanguageComboBox(string currentLang)
+        {
+            LanguageComboBox.Items.Clear();
+            foreach (var lang in LocalizationManager.SupportedLanguages)
+            {
+                LanguageComboBox.Items.Add(new ComboBoxItem
+                {
+                    Content = $"{lang.NativeName} ({lang.EnglishName})",
+                    Tag = lang.Code
+                });
+            }
+            SelectLanguageInComboBox(currentLang);
+        }
+
+        private void SelectLanguageInComboBox(string code)
+        {
+            for (int i = 0; i < LanguageComboBox.Items.Count; i++)
+            {
+                if (LanguageComboBox.Items[i] is ComboBoxItem item && string.Equals((string)item.Tag, code, StringComparison.OrdinalIgnoreCase))
+                {
+                    LanguageComboBox.SelectedIndex = i;
+                    return;
+                }
+            }
+            if (LanguageComboBox.Items.Count > 0)
+                LanguageComboBox.SelectedIndex = 0;
+        }
+
+        private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (LanguageComboBox.SelectedItem is ComboBoxItem item && item.Tag is string langCode)
+            {
+                LocalizationManager.Instance.CurrentLanguage = langCode;
+            }
+        }
+
+        private void CheckUpdatesPrefButton_Click(object sender, RoutedEventArgs e)
+        {
+            UpdateWindow updateWindow = new UpdateWindow
+            {
+                Owner = this
+            };
+            updateWindow.ShowDialog();
         }
 
         // =========================================================
@@ -152,7 +209,7 @@ namespace DesktopNotes
                 }
             }
 
-            NoteSizeComboBox.Items.Add(new ComboBoxItem { Content = "Այլ...", Tag = "__OTHER__" });
+            NoteSizeComboBox.Items.Add(new ComboBoxItem { Content = LocalizationManager.Get("OtherEllipsis"), Tag = "__OTHER__" });
 
             SelectSizeItem(selectedSize);
         }
@@ -198,11 +255,10 @@ namespace DesktopNotes
 
         private void PromptCustomSize()
         {
-            // Պարզ մուտքագրման պատուհան
             Window prompt = new Window
             {
-                Title = "Նոր չափ",
-                Width = 320,
+                Title = LocalizationManager.Get("PromptCustomSizeTitle"),
+                Width = 340,
                 Height = 180,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner = this,
@@ -217,7 +273,7 @@ namespace DesktopNotes
 
             TextBlock header = new TextBlock
             {
-                Text = "Մուտքագրեք թերթիկի չափսերը (օր․՝ 200 × 300)․",
+                Text = LocalizationManager.Get("PromptCustomSizeText"),
                 FontSize = 12,
                 Margin = new Thickness(0, 0, 0, 10)
             };
@@ -233,8 +289,8 @@ namespace DesktopNotes
             Grid.SetRow(inputs, 1);
 
             StackPanel buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            Button okBtn = new Button { Content = "Ավելացնել", Width = 85, Height = 26, Margin = new Thickness(0, 0, 8, 0), IsDefault = true };
-            Button cancelBtn = new Button { Content = "Չեղարկել", Width = 75, Height = 26, IsCancel = true };
+            Button okBtn = new Button { Content = LocalizationManager.Get("Add"), Width = 85, Height = 26, Margin = new Thickness(0, 0, 8, 0), IsDefault = true };
+            Button cancelBtn = new Button { Content = LocalizationManager.Get("Cancel"), Width = 75, Height = 26, IsCancel = true };
             buttons.Children.Add(okBtn);
             buttons.Children.Add(cancelBtn);
             Grid.SetRow(buttons, 2);
@@ -259,13 +315,12 @@ namespace DesktopNotes
                 }
                 else
                 {
-                    MessageBox.Show(prompt, "Խնդրում ենք մուտքագրել վավեր թվային չափսեր (նվազագույնը 80)։", "Սխալ", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(prompt, LocalizationManager.Get("SizeMinLimit"), LocalizationManager.Get("Error"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             };
 
             if (prompt.ShowDialog() != true)
             {
-                // Վերականգնում ենք նախկին ընտրությունը
                 SelectSizeItem(string.Format("{0} × {1}", (int)store.NoteWidth, (int)store.NoteHeight));
             }
         }
@@ -315,7 +370,7 @@ namespace DesktopNotes
                 }
             }
 
-            combo.Items.Add(new ComboBoxItem { Content = "Այլ...", Tag = "__OTHER__" });
+            combo.Items.Add(new ComboBoxItem { Content = LocalizationManager.Get("OtherEllipsis"), Tag = "__OTHER__" });
 
             SelectColorInComboBox(combo, selectedHex);
         }
@@ -366,7 +421,6 @@ namespace DesktopNotes
                 }
             }
 
-            // Եթե ցանկում չկա, ավելացնենք որպես custom
             List<string> customs = GetCustomListForCombo(combo);
             if (!customs.Contains(hex, StringComparer.OrdinalIgnoreCase))
             {
@@ -428,7 +482,6 @@ namespace DesktopNotes
             }
             else
             {
-                // Վերականգնել նախորդը
                 string prev = combo == NoteColorComboBox ? store.NoteColor :
                               combo == TextColorComboBox ? store.TextColor : store.PencilColor;
                 SelectColorInComboBox(combo, prev);
@@ -452,49 +505,47 @@ namespace DesktopNotes
 
         private void RemoveNoteColorButton_Click(object sender, RoutedEventArgs e)
         {
-            RemoveSelectedCustomColor(NoteColorComboBox);
+            RemoveColorFromCombo(NoteColorComboBox, store.CustomNoteColors, defaultNoteColors);
         }
 
         private void RemoveTextColorButton_Click(object sender, RoutedEventArgs e)
         {
-            RemoveSelectedCustomColor(TextColorComboBox);
+            RemoveColorFromCombo(TextColorComboBox, store.CustomTextColors, defaultTextColors);
         }
 
         private void RemovePencilColorButton_Click(object sender, RoutedEventArgs e)
         {
-            RemoveSelectedCustomColor(PencilColorComboBox);
+            RemoveColorFromCombo(PencilColorComboBox, store.CustomPencilColors, defaultPencilColors);
         }
 
-        private void RemoveSelectedCustomColor(ComboBox combo)
+        private void RemoveColorFromCombo(ComboBox combo, List<string> customs, List<string> defaults)
         {
             if (combo.SelectedItem is ComboBoxItem item && item.Tag is string hex)
             {
-                List<string> customs = GetCustomListForCombo(combo);
-                List<string> defs = GetDefaultListForCombo(combo);
-
-                if (customs.RemoveAll(c => string.Equals(c, hex, StringComparison.OrdinalIgnoreCase)) > 0)
+                if (customs.Contains(hex, StringComparer.OrdinalIgnoreCase))
                 {
-                    PopulateColorComboBox(combo, defs, customs, defs[0]);
+                    customs.RemoveAll(h => string.Equals(h, hex, StringComparison.OrdinalIgnoreCase));
+                    PopulateColorComboBox(combo, defaults, customs, defaults[0]);
                 }
             }
         }
 
         private void UpdateRemoveColorButtonState(ComboBox combo)
         {
-            Button btn = combo == NoteColorComboBox ? RemoveNoteColorButton :
-                         combo == TextColorComboBox ? RemoveTextColorButton : RemovePencilColorButton;
-
+            bool canRemove = false;
             if (combo.SelectedItem is ComboBoxItem item && item.Tag is string hex)
             {
                 List<string> customs = GetCustomListForCombo(combo);
                 List<string> defs = GetDefaultListForCombo(combo);
-                btn.IsEnabled = customs.Any(c => string.Equals(c, hex, StringComparison.OrdinalIgnoreCase)) &&
-                                !defs.Any(d => string.Equals(d, hex, StringComparison.OrdinalIgnoreCase));
+                canRemove = customs.Contains(hex, StringComparer.OrdinalIgnoreCase) && !defs.Contains(hex, StringComparer.OrdinalIgnoreCase);
             }
-            else
-            {
-                btn.IsEnabled = false;
-            }
+
+            if (combo == NoteColorComboBox && RemoveNoteColorButton != null)
+                RemoveNoteColorButton.IsEnabled = canRemove;
+            else if (combo == TextColorComboBox && RemoveTextColorButton != null)
+                RemoveTextColorButton.IsEnabled = canRemove;
+            else if (combo == PencilColorComboBox && RemovePencilColorButton != null)
+                RemovePencilColorButton.IsEnabled = canRemove;
         }
 
         // =========================================================
@@ -505,46 +556,32 @@ namespace DesktopNotes
         {
             FontFamilyComboBox.Items.Clear();
 
-            var systemFonts = Fonts.SystemFontFamilies
-                                   .Select(f => f.Source)
-                                   .OrderBy(name => name)
-                                   .ToList();
-
-            List<string> topFonts = new() { "Comic Sans MS", "Calibri", "Courier New", "Arial", "Segoe UI", "Times New Roman", "Tahoma" };
-
-            foreach (string font in topFonts)
+            foreach (string font in defaultFonts)
             {
-                if (systemFonts.Contains(font))
+                FontFamilyComboBox.Items.Add(new ComboBoxItem { Content = font, Tag = font });
+            }
+
+            var sysFonts = Fonts.SystemFontFamilies.Select(f => f.Source).OrderBy(s => s).ToList();
+            foreach (string sf in sysFonts)
+            {
+                if (!defaultFonts.Contains(sf, StringComparer.OrdinalIgnoreCase))
                 {
-                    FontFamilyComboBox.Items.Add(new ComboBoxItem { Content = font, Tag = font });
+                    FontFamilyComboBox.Items.Add(new ComboBoxItem { Content = sf, Tag = sf });
                 }
             }
 
-            foreach (string font in systemFonts)
-            {
-                if (!topFonts.Contains(font))
-                {
-                    FontFamilyComboBox.Items.Add(new ComboBoxItem { Content = font, Tag = font });
-                }
-            }
-
-            SelectFontItem(selectedFont);
-        }
-
-        private void SelectFontItem(string fontName)
-        {
             for (int i = 0; i < FontFamilyComboBox.Items.Count; i++)
             {
-                if (FontFamilyComboBox.Items[i] is ComboBoxItem item && (string)item.Tag == fontName)
+                if (FontFamilyComboBox.Items[i] is ComboBoxItem item &&
+                    string.Equals((string)item.Tag, selectedFont, StringComparison.OrdinalIgnoreCase))
                 {
                     FontFamilyComboBox.SelectedIndex = i;
                     return;
                 }
             }
 
-            ComboBoxItem customItem = new ComboBoxItem { Content = fontName, Tag = fontName };
-            FontFamilyComboBox.Items.Insert(0, customItem);
-            FontFamilyComboBox.SelectedIndex = 0;
+            if (FontFamilyComboBox.Items.Count > 0)
+                FontFamilyComboBox.SelectedIndex = 0;
         }
 
         private void FontFamilyComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -587,6 +624,13 @@ namespace DesktopNotes
             object sender,
             RoutedEventArgs e)
         {
+            // 0. Լեզու
+            if (LanguageComboBox.SelectedItem is ComboBoxItem langItem && langItem.Tag is string langCode)
+            {
+                store.Language = langCode;
+                LocalizationManager.Instance.CurrentLanguage = langCode;
+            }
+
             // 1. Չափ
             if (NoteSizeComboBox.SelectedItem is ComboBoxItem sizeItem && sizeItem.Tag is string sizeStr && sizeStr != "__OTHER__")
             {
@@ -627,6 +671,9 @@ namespace DesktopNotes
 
             // 7. Ազատ մեծացում
             store.AllowFreeResize = (AllowFreeResizeCheckBox.IsChecked == true);
+
+            // 7.1. Պատահական թեքում նոր թերթիկների համար
+            store.RandomRotationForNewNotes = (RandomRotationCheckBox.IsChecked == true);
 
             // 7.5. Տրցակի հավասարեցում
             if (StackAlignmentComboBox.SelectedItem is ComboBoxItem cbi && cbi.Tag is string alignTag)
@@ -674,7 +721,6 @@ namespace DesktopNotes
         {
             MainWindow[] openNotes = Application.Current.Windows.OfType<MainWindow>().ToArray();
 
-            // 1. Ստեղծում ենք նախորդ վիճակների պատճենները հետարկման (Undo) համար
             List<NotePropertiesSnapshot> beforeSnapshots = new List<NotePropertiesSnapshot>();
             Dictionary<Guid, string> beforeStackAlignments = new Dictionary<Guid, string>();
 
@@ -704,10 +750,8 @@ namespace DesktopNotes
                 beforeStackAlignments[stack.Id] = stack.Alignment ?? "TopCenter";
             }
 
-            // 2. Կիրառում ենք նոր նախընտրանքները
             foreach (MainWindow window in openNotes)
             {
-                // Թարմացնում ենք NoteData-ի հատկությունները
                 if (store.Notes.TryGetValue(window.NoteId, out NoteData? data))
                 {
                     data.Width = store.NoteWidth;
@@ -720,7 +764,6 @@ namespace DesktopNotes
                     data.IsItalic = store.IsItalic;
                 }
 
-                // Թարմացնում ենք պատուհանի վիզուալ տեսքը
                 window.Note.Width = store.NoteWidth;
                 window.Note.Height = store.NoteHeight;
 
@@ -735,7 +778,6 @@ namespace DesktopNotes
                 window.SaveCurrentState();
             }
 
-            // Թարմացնում ենք բոլոր տրցակների հավասարեցումը
             foreach (NoteStack stack in store.Stacks.Values)
             {
                 stack.Alignment = store.StackAlignment;
@@ -746,7 +788,6 @@ namespace DesktopNotes
                 }
             }
 
-            // 3. Ստեղծում ենք նոր վիճակների պատճենները վերարկման (Redo) համար
             List<NotePropertiesSnapshot> afterSnapshots = new List<NotePropertiesSnapshot>();
             foreach (MainWindow window in openNotes)
             {
@@ -766,7 +807,6 @@ namespace DesktopNotes
                 });
             }
 
-            // 4. Ավելացնում ենք գործողությունը UndoManager-ի մեջ
             AppUndoManager.PushAction(new ApplyPreferencesUndoAction
             {
                 PreviousSnapshots = beforeSnapshots,
@@ -782,8 +822,8 @@ namespace DesktopNotes
             object sender,
             RoutedEventArgs e)
         {
+            LocalizationManager.Instance.CurrentLanguage = initialLanguage;
             Close();
         }
     }
 }
-

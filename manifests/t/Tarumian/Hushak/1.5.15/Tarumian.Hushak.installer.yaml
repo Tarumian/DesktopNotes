@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.9.0.schema.json
+
+PackageIdentifier: Tarumian.Hushak
+PackageVersion: 1.5.15
+InstallerType: inno
+Scope: user
+InstallModes:
+  - interactive
+  - silent
+  - silentWithProgress
+InstallerSwitches:
+  Silent: /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+  SilentWithProgress: /SILENT /SUPPRESSMSGBOXES /NORESTART
+UpgradeBehavior: install
+ProductCode: '{D1A39C25-9D22-4D39-8472-875BC31F58A0}_is1'
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://gitlab.com/Tarumian/hushak/-/releases/v1.5.15/downloads/Hushak_Setup_v1.5.15.exe
+    InstallerSha256: A39A552BAEC2D77D05D533DC6EF6A9595ABC487CACCDBA5D155DB1B81F38A65D
+ManifestType: installer
+ManifestVersion: 1.9.0

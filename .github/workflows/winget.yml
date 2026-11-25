@@ -1,0 +1,24 @@
+name: Publish to WinGet
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g. 1.5.14)'
+        required: true
+
+jobs:
+  publish-winget:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Publish to Windows Package Manager Community Repository
+        uses: vedantmgoyal2009/winget-releaser@v2
+        with:
+          identifier: Tarumian.Hushak
+          version: ${{ github.event.inputs.version || github.event.release.tag_name }}
+          token: ${{ secrets.WINGET_TOKEN }}

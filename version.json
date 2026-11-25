@@ -1,0 +1,15 @@
+{
+    "version":  "1.5.15",
+    "releaseDate":  "2026-11-25",
+    "pageUrl":  "https://tarumian.am/hushak/",
+    "downloadUrl":  "https://gitlab.com/Tarumian/hushak/-/releases/v1.5.15/downloads/Hushak_Setup_v1.5.15.exe",
+    "portableUrl":  "https://gitlab.com/Tarumian/hushak/-/releases/v1.5.15/downloads/Hushak_Portable_v1.5.15.zip",
+    "sha256":  "a39a552baec2d77d05d533dc6ef6a9595abc487caccdba5d155db1b81f38a65d",
+    "portableSha256":  "82766bd9b07eaee66db0e7b3e886e4ffe398a2997686b57f1eca2d3c32ee6cc5",
+    "sizeBytes":  50750089,
+    "portableBytes":  68831061,
+    "releaseNotes":  {
+                         "hy":  "Կայքի (tarumian.am) և GitLab-ի թողարկում՝ ներկառուցված արդիացումների ստուգումով և բարելավված տեղադրիչով։",
+                         "en":  "Hushak release for tarumian.am and GitLab with built-in update checker and improved installer."
+                     }
+}

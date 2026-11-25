@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace DesktopNotes
+namespace Hushak
 {
     public partial class HelpWindow : Window
     {

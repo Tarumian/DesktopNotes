@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.9.0.schema.json
+
+PackageIdentifier: Tarumian.Hushak
+PackageVersion: 1.5.15
+PackageLocale: en-US
+Publisher: Tarumian
+PublisherUrl: https://tarumian.am
+Author: Ruben Tarumian
+PackageName: Hushak
+PackageUrl: https://tarumian.am/hushak/
+License: MIT
+LicenseUrl: https://gitlab.com/Tarumian/hushak/-/raw/main/LICENSE
+Copyright: Copyright (c) 2026 Ruben Tarumian
+ShortDescription: Lightweight, feature-rich desktop sticky notes application for Windows.
+Description: |-
+  Hushak is an elegant, multi-functional desktop sticky notes application for Windows built with .NET 8 WPF.
+  Key features include:
+  - Free note rotation and pinning
+  - Rich text formatting and fonts
+  - Ink drawing with pencil mode
+  - Note stacks and organization
+  - Full-text search across all notes
+  - Excel export via ClosedXML
+  - Multilingual interface (Armenian, English, Russian, and more)
+Moniker: hushak
+Tags:
+  - sticky-notes
+  - notes
+  - desktop
+  - productivity
+  - armenian
+  - wpf
+ManifestType: defaultLocale
+ManifestVersion: 1.9.0

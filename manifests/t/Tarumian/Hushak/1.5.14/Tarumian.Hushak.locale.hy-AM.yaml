@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.locale.1.9.0.schema.json
+
+PackageIdentifier: Tarumian.Hushak
+PackageVersion: 1.5.14
+PackageLocale: hy-AM
+Publisher: Թարումեան ծրագրեր
+PublisherUrl: https://github.com/Tarumian
+Author: Ռուբեն Թարումյան
+PackageName: Հուշակ
+PackageUrl: https://github.com/Tarumian/DesktopNotes
+License: MIT
+LicenseUrl: https://raw.githubusercontent.com/Tarumian/DesktopNotes/main/LICENSE
+Copyright: Copyright (c) 2026 Ռուբեն Թարումյան
+ShortDescription: "Հարմարավետ, գեղեցիկ և բազմաֆունկցիոնալ գրասեղանի թերթիկներ Windows-ի համար"
+Description: |-
+  «Հուշակ»-ը (DesktopNotes) նախատեսված է գրասեղանին արագ նշումներ կատարելու, կարևոր հիշեցումները միշտ աչքի առաջ պահելու, մատիտով ձեռագիր էսքիզներ անելու և բազմաթիվ թերթիկները տրցակների մեջ խմբավորելու համար։
+  Հիմնական հնարավորությունները․
+  - Թերթիկների ազատ պտտում և գամում
+  - Տեքստի հարուստ ձևավորում և տառատեսակներ
+  - Մատիտով ազատ նկարչություն
+  - Թերթիկների տրցակներ
+  - Որոնման հզոր համակարգ
+  - Արտահանում Excel (ClosedXML)
+  - Լիակատար հայերեն և բազմալեզու միջերես
+Tags:
+  - հուշակ
+  - նշումներ
+  - թերթիկներ
+  - sticky-notes
+ManifestType: locale
+ManifestVersion: 1.9.0

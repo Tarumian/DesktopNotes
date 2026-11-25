@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace DesktopNotes
+namespace Hushak
 {
     // =========================================================
     // .DNOTE ՆԻՇՔԻ ՊԱՀՎՈՂ ՏՎՅԱԼՆԵՐԸ
@@ -50,6 +50,8 @@ namespace DesktopNotes
 
         public string RotationOrigin { get; set; } = "TopCenter";
 
+        public bool RandomRotationForNewNotes { get; set; } = true;
+
         public List<string> CustomSizes { get; set; } = new List<string>();
 
         public List<string> CustomNoteColors { get; set; } = new List<string>();
@@ -57,6 +59,10 @@ namespace DesktopNotes
         public List<string> CustomTextColors { get; set; } = new List<string>();
 
         public List<string> CustomPencilColors { get; set; } = new List<string>();
+
+        public string Language { get; set; } = "hy";
+
+        public string StoreAppId { get; set; } = "";
 
 
         // -----------------------------------------------------
